@@ -1,0 +1,264 @@
+/* ───────────────────────── Components ─────────────────────────
+   Design-system classes: layout blocks, liquid glass, buttons, inputs, text helpers. */
+@layer components {
+  /* Landing block. The gap above it is its own padding-top, and anchor jumps skip it, so «Обо мне»,
+     «Платформа», «FAQ» land right under the floating header (at --nav-space). */
+  .section {
+    padding-top: var(--section-gap);
+    scroll-margin-top: calc(var(--nav-space) - var(--section-gap));
+  }
+  /* Menu categories on desktop: the block takes the whole screen under the header, so after a
+     jump only this category is visible and the next one starts below the screen's edge (plus
+     the usual gap). Taller content simply scrolls. The inner wrapper may use flex-1 / mt-auto
+     to spread over the screen («Обо мне»). */
+  @media (min-width: 64rem) {
+    .section-screen {
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100svh + var(--section-gap) - var(--nav-space));
+    }
+    .section-screen > :not([data-decor]) {
+      width: 100%;
+    }
+  }
+
+  /* ── Liquid glass ──
+     Like the header in its open state at the top of the page (header.tsx): a light dark tint over a
+     strong blur, so the planet, the stars and the decor behind a card turn into soft colour and the
+     text stays readable. Lighter than the floating header (ink-950/75), so cards don't merge with it.
+     Write only the unprefixed backdrop-filter: Lightning CSS adds -webkit- for Safari itself, and
+     with both written by hand it keeps only the prefixed one, which Chrome ignores. */
+  .glass {
+    position: relative;
+    isolation: isolate;
+    border-radius: var(--radius-glass);
+    background:
+      linear-gradient(165deg, rgb(255 255 255 / 0.06) 0%, rgb(255 255 255 / 0.01) 40%, rgb(143 128 255 / 0.05) 100%),
+      rgb(4 3 13 / 0.4);
+    border: 1px solid rgb(255 255 255 / 0.1);
+    backdrop-filter: blur(24px) saturate(150%);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.1),
+      0 24px 60px -24px rgb(0 0 0 / 0.7);
+  }
+
+  /* Specular rim: light top-left edge, soft violet bottom-right edge */
+  .glass::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.26) 0%,
+      rgb(255 255 255 / 0.04) 28%,
+      rgb(255 255 255 / 0) 55%,
+      rgb(180 168 255 / 0.22) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Pointer-following light (see components/ui/spotlight-tracker.tsx) */
+  .glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, -30%), rgb(170 158 255 / 0.14), transparent 55%);
+    opacity: var(--spot, 0);
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+  }
+
+  /* Panels that float over the page's text (the assistant): denser, so the text behind never shows */
+  .glass-strong {
+    background:
+      linear-gradient(165deg, rgb(255 255 255 / 0.05) 0%, rgb(255 255 255 / 0) 45%, rgb(143 128 255 / 0.04) 100%),
+      rgb(4 3 13 / 0.8);
+    backdrop-filter: blur(30px) saturate(160%);
+  }
+
+  /* ── Pop-up panel (the AI assistant) ──
+     Grows out of its launcher in the bottom-right corner and shrinks back into it; open state =
+     [data-open]. Motion uses `transform` on purpose: Tailwind's translate and scale utilities set the
+     separate `translate` / `scale` properties, which a transform transition doesn't animate (they
+     jumped instantly). The layer is promoted up front (will-change), so the first frame doesn't
+     stall and the text doesn't re-raster. */
+  .pop-panel {
+    transform-origin: 100% 100%;
+    will-change: transform, opacity;
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.96);
+    visibility: hidden;
+    pointer-events: none;
+    /* Closing: eases away and fades with the motion, hidden only once it's over */
+    transition:
+      opacity 0.28s cubic-bezier(0.4, 0, 0.6, 1),
+      transform 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0s linear 0.32s;
+  }
+  .pop-panel[data-open] {
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+    pointer-events: auto;
+    /* Opening: quick fade-in, the size settles softly */
+    transition:
+      opacity 0.24s ease-out,
+      transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s;
+  }
+
+  /* ── Disclosure (native <details>, e.g. the FAQ) ──
+     The answer slides open and closed: the details' content box is a one-row grid whose row grows
+     from 0fr to 1fr, the body inside fades in. `content-visibility` (how the browser hides closed
+     content) waits for the end of the closing slide thanks to allow-discrete. Browsers without
+     ::details-content simply open the answer instantly. */
+  .disclosure::details-content {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition:
+      grid-template-rows 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      content-visibility 0.45s allow-discrete;
+  }
+  .disclosure[open]::details-content {
+    grid-template-rows: 1fr;
+  }
+  .disclosure-body {
+    min-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition:
+      opacity 0.35s ease,
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .disclosure[open] .disclosure-body {
+    opacity: 1;
+    transform: none;
+  }
+
+  .glass-soft {
+    background: rgb(255 255 255 / 0.035);
+    border: 1px solid rgb(255 255 255 / 0.07);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.08);
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-semibold whitespace-nowrap transition duration-200 select-none;
+    @apply disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-sm {
+    @apply h-9 px-4 text-sm;
+  }
+  .btn-md {
+    @apply h-11 px-5 text-[15px];
+  }
+  .btn-lg {
+    @apply h-13 px-7 text-base;
+  }
+
+  /* "Pressable" glowing button: lit from the top, inner glow at the bottom, sinks on hover/press. */
+  .btn-primary {
+    color: #fff;
+    border: 1px solid rgb(255 255 255 / 0.24);
+    background: radial-gradient(130% 190% at 50% -25%, #c6baff 0%, #8d78ff 30%, #5a3ef0 62%, #2a14a6 100%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.5),
+      inset 0 -6px 16px rgb(170 140 255 / 0.85),
+      0 2px 3px rgb(0 0 0 / 0.35),
+      0 12px 34px -8px rgb(124 92 255 / 0.85);
+    text-shadow: 0 1px 1px rgb(20 0 90 / 0.35);
+  }
+  .btn-primary:hover {
+    transform: translateY(1px) scale(0.985);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.45),
+      inset 0 -8px 18px rgb(170 140 255 / 0.95),
+      0 1px 2px rgb(0 0 0 / 0.3),
+      0 6px 20px -8px rgb(124 92 255 / 0.75);
+  }
+  .btn-primary:active {
+    transform: translateY(3px) scale(0.965);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.35),
+      inset 0 -4px 10px rgb(170 140 255 / 0.8),
+      0 2px 8px -4px rgb(124 92 255 / 0.6);
+  }
+
+  .btn-glass {
+    color: var(--color-fg);
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.03));
+    border: 1px solid rgb(255 255 255 / 0.12);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18);
+    backdrop-filter: blur(14px);
+  }
+  .btn-glass:hover {
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.05));
+    border-color: rgb(255 255 255 / 0.2);
+  }
+
+  /* ── Inputs ── */
+  .field {
+    @apply h-12 w-full rounded-2xl px-4 text-[15px] text-fg placeholder:text-dim transition outline-none;
+    background: rgb(4 3 16 / 0.5);
+    border: 1px solid rgb(255 255 255 / 0.09);
+    box-shadow: inset 0 2px 8px rgb(0 0 0 / 0.35);
+  }
+  .field:focus {
+    border-color: rgb(160 148 255 / 0.6);
+    box-shadow:
+      inset 0 2px 8px rgb(0 0 0 / 0.35),
+      0 0 0 4px rgb(143 128 255 / 0.15);
+  }
+
+  /* ── Text helpers ── */
+  .text-gradient {
+    background: linear-gradient(120deg, #ffffff 0%, #d9d3ff 35%, #9d90ff 70%, #e9a8ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .text-neon-glow {
+    color: var(--color-neon);
+    text-shadow: 0 0 22px rgb(124 248 208 / 0.7);
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full px-3 py-1 font-mono text-[11px] tracking-[0.18em] text-accent-soft uppercase;
+    background: rgb(143 128 255 / 0.1);
+    border: 1px solid rgb(143 128 255 / 0.22);
+  }
+
+  .kbd {
+    @apply rounded-md px-1.5 py-0.5 font-mono text-[11px] text-muted;
+    background: rgb(255 255 255 / 0.06);
+    border: 1px solid rgb(255 255 255 / 0.08);
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, rgb(255 255 255 / 0.04) 0%, rgb(255 255 255 / 0.1) 50%, rgb(255 255 255 / 0.04) 100%);
+    background-size: 200% 100%;
+    @apply animate-shimmer rounded-xl;
+  }
+
+  /* Huge outlined word behind section titles */
+  .ghost-text {
+    color: transparent;
+    -webkit-text-stroke: 1px rgb(170 158 255 / 0.2);
+    background: linear-gradient(180deg, rgb(143 128 255 / 0.12), transparent 80%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    letter-spacing: -0.02em;
+  }
+}

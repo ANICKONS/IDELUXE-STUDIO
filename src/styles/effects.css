@@ -1,0 +1,79 @@
+/* ───────────────────────── Effects ─────────────────────────
+   Masks and scroll-driven animations (progressive enhancement, no JS). */
+@layer components {
+  /* Floating "screen" without a frame: every edge eases to full transparency, so the video
+     has no borders or corners at all. Eased stops (~smoothstep) avoid a visible fade "band". */
+  .mask-dissolve-screen {
+    --dissolve-x: linear-gradient(
+      to right,
+      transparent,
+      rgb(0 0 0 / 0.1) 5.5%,
+      rgb(0 0 0 / 0.5) 11%,
+      rgb(0 0 0 / 0.9) 16.5%,
+      #000 22%,
+      #000 78%,
+      rgb(0 0 0 / 0.9) 83.5%,
+      rgb(0 0 0 / 0.5) 89%,
+      rgb(0 0 0 / 0.1) 94.5%,
+      transparent
+    );
+    --dissolve-y: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(0 0 0 / 0.1) 5%,
+      rgb(0 0 0 / 0.5) 10%,
+      rgb(0 0 0 / 0.9) 15%,
+      #000 20%,
+      #000 80%,
+      rgb(0 0 0 / 0.9) 85%,
+      rgb(0 0 0 / 0.5) 90%,
+      rgb(0 0 0 / 0.1) 95%,
+      transparent
+    );
+    -webkit-mask-image: var(--dissolve-x), var(--dissolve-y);
+    -webkit-mask-composite: source-in;
+    mask-image: var(--dissolve-x), var(--dissolve-y);
+    mask-composite: intersect;
+  }
+
+  @supports (animation-timeline: view()) {
+    .reveal {
+      /* Rise from the depth while entering; drift back into space while leaving through the top.
+         `recede` only fills forwards, so it doesn't override `reveal` before it starts. */
+      animation:
+        reveal linear both,
+        recede linear forwards;
+      animation-timeline: view(), view();
+      /* Fully revealed by the time most of the element is on screen: a block that fits the
+         screen is never left half-transparent at the bottom. Receding starts only once a good
+         part of the element is already under the header. */
+      animation-range:
+        entry 0% entry 75%,
+        exit 30% exit 100%;
+    }
+
+    /* Hero editor: straightens up from a tilted pose while scrolling towards it */
+    .hero-tilt {
+      transform-origin: 50% 100%;
+      animation: hero-tilt linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 45%;
+    }
+  }
+}
+
+/* Users who asked the OS for less motion get a still page */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal,
+  .hero-tilt {
+    animation: none !important;
+  }
+}

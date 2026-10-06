@@ -1,0 +1,235 @@
+/* ───────────────────────── Keyframes ─────────────────────────
+   Used through the animate-* utilities (tokens.css) or directly from components. */
+
+/* Light rings of the platform under the hero editor */
+@keyframes pedestal-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translateX(-50%) scale(0.97);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.02);
+  }
+}
+
+/* Hero editor: tilted back on the platform at first, straightens up as you scroll to it */
+@keyframes hero-tilt {
+  from {
+    transform: perspective(1800px) rotateX(16deg) scale(0.95);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* Cards and panels rise out of the depth of space as they come into view */
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: perspective(1400px) translate3d(0, 56px, -160px) rotateX(14deg);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* …and leave through the top by drifting back into space */
+@keyframes recede {
+  to {
+    opacity: 0.2;
+    transform: perspective(1400px) translate3d(0, -24px, -120px) rotateX(-8deg);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotateX(8deg) rotateY(-14deg);
+  }
+  50% {
+    transform: translateY(-12px) rotateX(10deg) rotateY(-8deg);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgb(143 128 255 / 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 18px rgb(143 128 255 / 0);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 3D decor hovering in the air; --r is the resting angle, --lift the height of the bob */
+@keyframes levitate {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translate3d(0, calc(var(--lift, 16px) * -1), 0) rotate(calc(var(--r, 0deg) + 5deg));
+  }
+}
+
+/* Slow sideways drift + tilt layered over `levitate` (different period → irregular path) */
+@keyframes sway {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  35% {
+    transform: translate3d(var(--sx, 6px), 0, 0) rotate(var(--sr, 3deg));
+  }
+  70% {
+    transform: translate3d(calc(var(--sx, 6px) * -0.7), 0, 0) rotate(calc(var(--sr, 3deg) * -0.8));
+  }
+}
+
+@keyframes reel-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Floating preview window; --tilt sets its resting angle */
+@keyframes window-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--tilt, 0deg));
+  }
+  50% {
+    transform: translateY(-10px) rotate(calc(var(--tilt, 0deg) - 1deg));
+  }
+}
+
+/* Click hint (one loop ≈ 5.5 s, features/reel/click-hint.tsx): a cursor glides onto the play
+   button, presses it (the button dips, a ring bursts out, the caption shows up), then leaves.
+   The end state of every keyframe is "at rest", so with reduced motion only the static button remains. */
+@keyframes hint-cursor {
+  0%,
+  6% {
+    opacity: 0;
+    transform: translate(48px, 44px) scale(1);
+  }
+  22% {
+    opacity: 1;
+    transform: translate(6px, 8px) scale(1);
+  }
+  28% {
+    transform: translate(6px, 8px) scale(0.8);
+  }
+  35% {
+    transform: translate(6px, 8px) scale(1);
+  }
+  54% {
+    opacity: 1;
+    transform: translate(6px, 8px) scale(1);
+  }
+  64%,
+  100% {
+    opacity: 0;
+    transform: translate(30px, 30px) scale(1);
+  }
+}
+
+@keyframes hint-press {
+  0%,
+  26% {
+    transform: scale(1);
+    background-color: rgb(255 255 255 / 0.08);
+  }
+  30% {
+    transform: scale(0.86);
+    background-color: rgb(255 255 255 / 0.22);
+  }
+  38% {
+    transform: scale(1.05);
+  }
+  46%,
+  100% {
+    transform: scale(1);
+    background-color: rgb(255 255 255 / 0.08);
+  }
+}
+
+@keyframes hint-ripple {
+  0%,
+  28% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  31% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  56%,
+  100% {
+    opacity: 0;
+    transform: scale(2.3);
+  }
+}
+
+@keyframes hint-caption {
+  0%,
+  22% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  30%,
+  56% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  66%,
+  100% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}

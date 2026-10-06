@@ -1,0 +1,46 @@
+/* ───────────────────────── Design tokens ─────────────────────────
+   Palette, fonts and animation shortcuts. Every Tailwind utility (bg-ink-950, text-accent-soft,
+   font-display, animate-levitate…) is generated from these variables: change them here to rebrand. */
+@theme {
+  --color-ink-950: #04030d;
+  --color-ink-900: #080619;
+  --color-ink-850: #0c0a24;
+  --color-ink-800: #110e30;
+  --color-ink-700: #1a1646;
+  --color-ink-600: #262062;
+
+  --color-accent: #8f80ff;
+  --color-accent-strong: #6b5bff;
+  --color-accent-soft: #c9c2ff;
+  --color-pink: #e9a8ff;
+  --color-teal: #6ee7d8;
+  --color-amber: #ffc978;
+  --color-sky: #8ec5ff;
+  /* Contrast highlight for key links («Тарифы», stickers). */
+  --color-neon: #7cf8d0;
+
+  --color-fg: #eeecff;
+  --color-muted: #aaa7d1;
+  --color-dim: #6e6b99;
+
+  /* Font variables are set by next/font in src/app/fonts.ts */
+  --font-display: var(--font-unbounded), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
+
+  --radius-glass: 1.75rem;
+
+  /* Keyframes live in animations.css */
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-pulse-ring: pulse-ring 2.4s ease-out infinite;
+  --animate-shimmer: shimmer 2.2s linear infinite;
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-reel-float: reel-float 9s ease-in-out infinite;
+  --animate-window-float: window-float 7s ease-in-out infinite;
+  --animate-fade-in: fade-in 0.45s ease-out both;
+  --animate-levitate: levitate 8s ease-in-out infinite;
+  --animate-sway: sway 13s ease-in-out infinite;
+  /* Hero editor platform */
+  --animate-pedestal: pedestal-pulse 5s ease-in-out infinite;
+}

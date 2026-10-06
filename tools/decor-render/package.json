@@ -1,0 +1,13 @@
+{
+  "name": "ideluxe-decor-render",
+  "private": true,
+  "type": "module",
+  "description": "Renders the floating 3D decor (public/decor/*.webp) with three.js in headless Edge/Chrome",
+  "scripts": {
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "1.63.0",
+    "three": "0.186.1"
+  }
+}

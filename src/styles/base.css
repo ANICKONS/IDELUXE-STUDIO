@@ -1,0 +1,47 @@
+/* ───────────────────────── Base ───────────────────────── */
+@layer base {
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    /* Page doesn't jump sideways when the player or mobile menu locks scrolling */
+    scrollbar-gutter: stable;
+    background: var(--color-ink-950);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* No body background: it would paint over the fixed -z-10 backdrop (html provides the base color). */
+  body {
+    @apply font-sans text-fg antialiased;
+    min-height: 100dvh;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgb(143 128 255 / 0.4);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent-soft);
+    outline-offset: 3px;
+    border-radius: 0.5rem;
+  }
+
+  :root {
+    /* Floating header (bottom edge ≈ 72 px) + 16 px: where a block's content lands after a menu jump */
+    --nav-space: 5.5rem;
+    /* Gap between landing blocks (.section). More than --nav-space, so after a jump nothing of
+       the previous block peeks out above the header. */
+    --section-gap: 8rem;
+  }
+
+  section[id] {
+    scroll-margin-top: 6.5rem;
+  }
+
+  /* Scrollbar in "editor" style */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(143 128 255 / 0.35) transparent;
+  }
+}
