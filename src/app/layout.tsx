@@ -30,7 +30,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     // data-scroll-behavior: Next turns the CSS smooth scrolling off while switching pages (new page
     // opens at the top instantly); anchor jumps within the page stay smooth.
-    <html lang="ru" data-scroll-behavior="smooth" className={fontVariables}>
+    // suppressHydrationWarning: the preloader's inline script sets data-boot before React loads.
+    <html lang="ru" data-scroll-behavior="smooth" className={fontVariables} suppressHydrationWarning>
       <body>
         {/* Auth: once connected, read the session on the server and pass it as `user` */}
         <SiteShell user={null}>{children}</SiteShell>

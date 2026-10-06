@@ -39,6 +39,7 @@
   --animate-reel-float: reel-float 9s ease-in-out infinite;
   --animate-window-float: window-float 7s ease-in-out infinite;
   --animate-fade-in: fade-in 0.45s ease-out both;
+  --animate-rise-in: rise-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
   --animate-levitate: levitate 8s ease-in-out infinite;
   --animate-sway: sway 13s ease-in-out infinite;
   /* Hero editor platform */

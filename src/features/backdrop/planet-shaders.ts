@@ -108,14 +108,13 @@ void main() {
 export const PLANET_FRAG = /* glsl */ `
 ${PRECISION}
 uniform sampler2D uMap;
-uniform vec2 uCanvas;   // canvas size, device px
+uniform vec2 uCanvas;   // canvas size, device px (the canvas covers the viewport)
 uniform float uScale;   // device px per CSS px
-uniform float uTop;     // canvas top in the viewport, CSS px
 uniform vec3 uPlanet;   // centre x, centre y (viewport CSS px, y down), radius
-uniform mat3 uGround;   // view → planet body (spin included)
+uniform mat3 uGround;   // view → planet body (camera orbit and spin included)
 uniform mat3 uSky;      // view → cloud layer (spins a little faster)
-uniform vec3 uSun;      // direction to the sun, view space (behind the planet, above it)
-uniform float uCity;    // city-light cells per planet radius (≈ one cell per 4 CSS px)
+uniform vec3 uSun;      // direction to the sun, view space (behind the planet; moves with the camera)
+uniform float uCity;    // city-light cells per planet radius (≈ one cell per 4–5 CSS px on the landing)
 const float PI = 3.14159265;
 ${HASH}
 
@@ -124,14 +123,14 @@ vec2 sphereUV(vec3 b) {
 }
 
 void main() {
-  vec2 css = vec2(gl_FragCoord.x, uCanvas.y - gl_FragCoord.y) / uScale + vec2(0.0, uTop);
+  vec2 css = vec2(gl_FragCoord.x, uCanvas.y - gl_FragCoord.y) / uScale;
   vec2 q = (css - uPlanet.xy) / uPlanet.z;
   q.y = -q.y;
   float r = length(q);
   float edge = (r - 1.0) * uPlanet.z;           // distance to the limb, CSS px (+ outside)
   float above = max(edge, 0.0);
 
-  vec2 sun2 = normalize(uSun.xy);
+  vec2 sun2 = normalize(uSun.xy + vec2(0.0, 1e-4));
   float facing = dot(q / max(r, 1e-4), sun2);   // 1 right under the sun, -1 opposite
   float lit = smoothstep(-0.4, 1.0, facing);
   float peak = pow(max(facing, 0.0), 40.0);     // where the sun hides behind the limb
@@ -141,16 +140,18 @@ void main() {
   // Atmosphere above the limb: a close glow and a wide soft haze, both faint — the backdrop must
   // stay dark under the text
   vec3 halo = vec3(0.0);
-  halo += vec3(0.5, 0.42, 1.0) * exp(-above / 10.0) * (0.04 + 0.3 * lit);
-  halo += vec3(0.32, 0.25, 0.9) * exp(-above / 60.0) * (0.02 + 0.13 * lit);
-  halo += vec3(0.9, 0.6, 1.0) * peak * 0.25 * exp(-above / 28.0);
-  // Over everything: the thin limb line, and the sun peeking out — a small hot spot plus a faint
-  // anamorphic streak (a nod to lens flares)
+  halo += vec3(0.5, 0.42, 1.0) * exp(-above / 16.0) * (0.03 + 0.17 * lit);
+  halo += vec3(0.32, 0.25, 0.9) * exp(-above / 70.0) * (0.02 + 0.11 * lit);
+  halo += vec3(0.85, 0.6, 1.0) * peak * 0.12 * exp(-above / 36.0);
+  // Over everything: the limb, and the sun peeking out — a small hot spot plus a faint
+  // anamorphic streak (a nod to lens flares). The limb is a soft band a few px wide, not a hard
+  // bright line: the band reads as atmosphere and doesn't sting the eyes behind the text
   vec2 d = (q - sun2) * uPlanet.z;
-  vec3 glow = vec3(0.8, 0.76, 1.0) * exp(-abs(edge) / 1.2) * (0.06 + 0.6 * lit);
-  glow += vec3(0.98, 0.7, 1.0) * peak * 0.35 * exp(-abs(edge) / 4.0);
-  glow += vec3(0.6, 0.52, 1.0) * 0.12 * exp(-abs(d.y) / 1.8) * exp(-abs(d.x) / 360.0);
-  glow += vec3(0.85, 0.58, 1.0) * 0.07 * exp(-dot(d, d) / 7000.0);
+  float limb = 0.6 * exp(-abs(edge) / 2.2) + 0.4 * exp(-abs(edge) / 7.0);
+  vec3 glow = vec3(0.72, 0.68, 1.0) * limb * (0.04 + 0.26 * lit);
+  glow += vec3(0.95, 0.68, 1.0) * peak * 0.14 * exp(-abs(edge) / 6.0);
+  glow += vec3(0.6, 0.52, 1.0) * 0.04 * exp(-abs(d.y) / 5.0) * exp(-abs(d.x) / 320.0);
+  glow += vec3(0.85, 0.58, 1.0) * 0.05 * exp(-dot(d, d) / 9000.0);
   glow += halo * (1.0 - cover);
   vec3 col = vec3(0.0);
   if (cover > 0.0) {
@@ -194,7 +195,7 @@ void main() {
 
     // Near the limb the surface dissolves into the lit atmosphere
     float rim = pow(1.0 - n.z, 5.0);
-    col = mix(col, vec3(0.42, 0.36, 1.0) * (0.06 + 0.5 * lit), rim * (0.15 + 0.45 * lit));
+    col = mix(col, vec3(0.42, 0.36, 1.0) * (0.06 + 0.4 * lit), rim * (0.14 + 0.4 * lit));
 
     // Closer to the viewer (lower on the screen, under the content) the planet sinks into darkness
     col *= 1.0 - 0.6 * smoothstep(0.25, 0.7, n.z);

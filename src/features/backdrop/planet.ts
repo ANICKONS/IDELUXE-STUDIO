@@ -1,47 +1,49 @@
 import { PLANET_FRAG, QUAD_VERT, SURFACE_FRAG } from "@/features/backdrop/planet-shaders";
 
 /*
- * A huge planet rises from the bottom of the screen: its limb arcs across the backdrop, the sun is
- * hidden right behind it (rim light, sunrise glow), the night side below is speckled with city
- * lights. Rendered with WebGL 1: the surface map is baked once (a few strips per frame, so the
- * load doesn't stutter), then every frame is just two texture lookups per pixel.
+ * A huge planet in the backdrop, lit from behind (rim light, sunrise glow); its night side is
+ * speckled with city lights. Where it sits on screen and from which side we see it is decided by
+ * the camera (camera.ts). Rendered with WebGL 1: the surface map is baked once (a few strips per
+ * frame, so the load doesn't stutter), then every frame is just two texture lookups per pixel.
  * Without WebGL the sky canvas draws a flat silhouette instead (drawPlanetFallback).
  */
 
-/** Top of the planet (the limb at the centre of the screen), share of the viewport height. */
-export const PLANET_LIMB = 0.69;
-/** How far the atmosphere reaches above the limb, CSS px: the canvas starts that much higher. */
+/** How far the atmosphere reaches beyond the limb, CSS px: rows further away are not drawn. */
 const GLOW_PAD = 240;
 /** Spin axis tilted away from the viewer (the pole hides behind the limb) and leaning sideways. */
 const TILT = 0.45;
 const ROLL = -0.18;
-/** Direction to the sun in view space: above the planet and behind it. */
+/** Direction to the sun in world space: above the planet and behind it, as seen on the landing. */
 const SUN = normalize([0.2, 0.4, -0.9]);
 /** Surface map strips baked per frame. */
 const STRIP = 128;
 
-export type PlanetGeometry = { cx: number; cy: number; r: number; top: number };
-
-/** Big enough to read as a planet, not a hill: the limb drops ~250 px towards the sides at 1440 px. */
-export function planetGeometry(w: number, h: number, shiftX = 0): PlanetGeometry {
-  const r = Math.max(w * 0.8, 440);
-  const top = h * PLANET_LIMB;
-  return { cx: w / 2 + shiftX, cy: top + r, r, top };
-}
-
 export type PlanetView = {
+  /** Disc centre and radius, viewport CSS px. */
+  x: number;
+  y: number;
+  r: number;
   /** Rotation of the surface, rad. */
   spin: number;
   /** Rotation of the cloud layer, rad. */
   clouds: number;
-  /** Pointer parallax, CSS px. */
-  shiftX: number;
+  /** Camera orbit around the planet, rad (camera.ts → Pose). */
+  yaw: number;
+  pitch: number;
+  /**
+   * City-light cells per planet radius. Tied to the screen, not to the animated radius: otherwise
+   * the lights would reshuffle every frame while the camera moves.
+   */
+  cityCells: number;
 };
 
 export type Planet = {
   resize(width: number, height: number): void;
-  /** `finish`: bake the whole surface map now (single static frame, e.g. with reduced motion). */
-  draw(view: PlanetView, finish?: boolean): void;
+  /**
+   * Draws a frame; false while the surface map is still baking.
+   * `finish`: bake the whole map now (single static frame, e.g. with reduced motion).
+   */
+  draw(view: PlanetView, finish?: boolean): boolean;
   dispose(): void;
 };
 
@@ -60,15 +62,23 @@ function mul(a: Mat3, b: Mat3): Mat3 {
   return out;
 }
 
+const transpose = (m: Mat3): Mat3 => [m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8]];
+const apply = (m: Mat3, v: Vec3): Vec3 => [
+  m[0] * v[0] + m[1] * v[1] + m[2] * v[2],
+  m[3] * v[0] + m[4] * v[1] + m[5] * v[2],
+  m[6] * v[0] + m[7] * v[1] + m[8] * v[2],
+];
+
 const rotX = (t: number): Mat3 => [1, 0, 0, 0, Math.cos(t), -Math.sin(t), 0, Math.sin(t), Math.cos(t)];
 const rotY = (t: number): Mat3 => [Math.cos(t), 0, Math.sin(t), 0, 1, 0, -Math.sin(t), 0, Math.cos(t)];
 const rotZ = (t: number): Mat3 => [Math.cos(t), -Math.sin(t), 0, Math.sin(t), Math.cos(t), 0, 0, 0, 1];
 
-/** View → body: undo the roll and the tilt, then the spin about the planet's own axis. */
+/** World → tilted planet frame: undo the roll and the tilt. */
 const AXIS = mul(rotX(TILT), rotZ(-ROLL));
-const bodyMatrix = (spin: number) => mul(rotY(spin), AXIS);
+/** View → world: the camera orbit. */
+const orbit = (yaw: number, pitch: number) => mul(rotY(yaw), rotX(pitch));
 /** GLSL wants column-major. */
-const columnMajor = (m: Mat3) => new Float32Array([m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8]]);
+const columnMajor = (m: Mat3) => new Float32Array(transpose(m));
 
 function compile(gl: WebGLRenderingContext, type: number, src: string) {
   const shader = gl.createShader(type);
@@ -137,11 +147,12 @@ function setup(gl: WebGLRenderingContext, small: boolean): Resources {
   const draw = program(gl, PLANET_FRAG);
   const bake = program(gl, SURFACE_FRAG);
   const u: Resources["u"] = {};
-  for (const name of ["uMap", "uCanvas", "uScale", "uTop", "uPlanet", "uGround", "uSky", "uSun", "uCity"]) u[name] = gl.getUniformLocation(draw, name);
+  for (const name of ["uMap", "uCanvas", "uScale", "uPlanet", "uGround", "uSky", "uSun", "uCity"]) u[name] = gl.getUniformLocation(draw, name);
   u.uSize = gl.getUniformLocation(bake, "uSize");
 
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.BLEND);
+  gl.clearColor(0, 0, 0, 0);
   return { buffer, draw, bake, fbo, map, size, baked: 0, u };
 }
 
@@ -196,8 +207,9 @@ export function createPlanet(canvas: HTMLCanvasElement): Planet | null {
 
   let w = 0;
   let h = 0;
-  let top = 0;
   let scale = 1;
+  /** The canvas is already empty: nothing to clear while the planet stays off screen. */
+  let blank = false;
 
   const onLost = (e: Event) => {
     e.preventDefault();
@@ -206,6 +218,7 @@ export function createPlanet(canvas: HTMLCanvasElement): Planet | null {
   const onRestored = () => {
     try {
       res = setup(gl, w < 768);
+      blank = false;
     } catch {
       res = null;
     }
@@ -214,38 +227,60 @@ export function createPlanet(canvas: HTMLCanvasElement): Planet | null {
   canvas.addEventListener("webglcontextrestored", onRestored);
 
   return {
+    // The canvas covers the whole screen (the camera can put the planet anywhere); each frame
+    // only renders the rows the planet and its glow actually cover.
     resize(width, height) {
       w = width;
       h = height;
       scale = Math.min(window.devicePixelRatio || 1, w < 768 ? 1 : 1.5);
-      top = Math.max(0, Math.floor(planetGeometry(w, h).top - GLOW_PAD));
-      canvas.style.top = `${top}px`;
-      canvas.style.height = `${h - top}px`;
       canvas.width = Math.round(w * scale);
-      canvas.height = Math.round((h - top) * scale);
+      canvas.height = Math.round(h * scale);
+      blank = false;
     },
 
     draw(view, finish = false) {
-      if (!res || gl.isContextLost()) return;
-      if (!bakeStrips(gl, res, finish)) return;
-      const g = planetGeometry(w, h, view.shiftX);
-      const { u } = res;
+      if (!res || gl.isContextLost()) return false;
+      if (!bakeStrips(gl, res, finish)) return false;
+
+      const top = Math.max(0, view.y - view.r - GLOW_PAD);
+      const bottom = Math.min(h, view.y + view.r + GLOW_PAD);
+      const visible = bottom > top && view.x + view.r + GLOW_PAD > 0 && view.x - view.r - GLOW_PAD < w;
       gl.viewport(0, 0, canvas.width, canvas.height);
+      if (!visible) {
+        // Off screen (the login shot): clear once, then the canvas just keeps showing nothing
+        if (!blank) gl.clear(gl.COLOR_BUFFER_BIT);
+        blank = true;
+        return true;
+      }
+      blank = false;
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      // Device rows, counted from the bottom in GL
+      const y0 = Math.max(0, Math.floor((h - bottom) * scale));
+      const y1 = Math.min(canvas.height, Math.ceil((h - top) * scale));
+      gl.enable(gl.SCISSOR_TEST);
+      gl.scissor(0, y0, canvas.width, y1 - y0);
+
+      const cam = orbit(view.yaw, view.pitch);
+      const sun = apply(transpose(cam), SUN);
+      const { u } = res;
       gl.useProgram(res.draw);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, res.map);
       gl.uniform1i(u.uMap, 0);
       gl.uniform2f(u.uCanvas, canvas.width, canvas.height);
       gl.uniform1f(u.uScale, scale);
-      gl.uniform1f(u.uTop, top);
-      gl.uniform3f(u.uPlanet, g.cx, g.cy, g.r);
-      gl.uniformMatrix3fv(u.uGround, false, columnMajor(bodyMatrix(view.spin)));
-      gl.uniformMatrix3fv(u.uSky, false, columnMajor(bodyMatrix(view.clouds)));
-      gl.uniform3f(u.uSun, SUN[0], SUN[1], SUN[2]);
-      gl.uniform1f(u.uCity, g.r / 4);
+      gl.uniform3f(u.uPlanet, view.x, view.y, view.r);
+      // View → world (orbit) → tilted planet → spin about its own axis
+      gl.uniformMatrix3fv(u.uGround, false, columnMajor(mul(mul(rotY(view.spin), AXIS), cam)));
+      gl.uniformMatrix3fv(u.uSky, false, columnMajor(mul(mul(rotY(view.clouds), AXIS), cam)));
+      gl.uniform3f(u.uSun, sun[0], sun[1], sun[2]);
+      gl.uniform1f(u.uCity, view.cityCells);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.disable(gl.SCISSOR_TEST);
       // Fade in once the first real frame is on screen
       if (canvas.style.opacity !== "1") canvas.style.opacity = "1";
+      return true;
     },
 
     // Frees the GPU objects but keeps the context: a remount (React dev double-mount) gets the
@@ -259,31 +294,32 @@ export function createPlanet(canvas: HTMLCanvasElement): Planet | null {
   };
 }
 
-/** Flat stand-in without WebGL: dark disc, bright limb, soft glow (drawn on the sky canvas). */
-export function drawPlanetFallback(ctx: CanvasRenderingContext2D, g: PlanetGeometry) {
-  const { cx, cy, r } = g;
-  const halo = ctx.createRadialGradient(cx, cy, r, cx, cy, r + 160);
-  halo.addColorStop(0, "rgb(143 128 255 / 0.34)");
-  halo.addColorStop(0.25, "rgb(107 91 255 / 0.12)");
+/** Flat stand-in without WebGL: dark disc, soft limb, glow (drawn on the sky canvas). */
+export function drawPlanetFallback(ctx: CanvasRenderingContext2D, g: { x: number; y: number; r: number }) {
+  const { x, y, r } = g;
+  if (y - r - 160 > ctx.canvas.clientHeight) return;
+  const halo = ctx.createRadialGradient(x, y, r, x, y, r + 160);
+  halo.addColorStop(0, "rgb(143 128 255 / 0.26)");
+  halo.addColorStop(0.25, "rgb(107 91 255 / 0.1)");
   halo.addColorStop(1, "rgb(107 91 255 / 0)");
   ctx.fillStyle = halo;
   ctx.beginPath();
-  ctx.arc(cx, cy, r + 160, 0, Math.PI * 2);
+  ctx.arc(x, y, r + 160, 0, Math.PI * 2);
   ctx.fill();
 
-  const body = ctx.createRadialGradient(cx, cy - r * 0.2, r * 0.7, cx, cy, r);
+  const body = ctx.createRadialGradient(x, y - r * 0.2, r * 0.7, x, y, r);
   body.addColorStop(0, "#04030d");
   body.addColorStop(0.8, "#0a0822");
   body.addColorStop(1, "#2b2170");
   ctx.fillStyle = body;
   ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.strokeStyle = "rgb(214 208 255 / 0.85)";
-  ctx.lineWidth = 1.2;
-  ctx.shadowColor = "rgb(143 128 255 / 0.9)";
-  ctx.shadowBlur = 18;
+  ctx.strokeStyle = "rgb(214 208 255 / 0.4)";
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = "rgb(143 128 255 / 0.7)";
+  ctx.shadowBlur = 16;
   ctx.stroke();
   ctx.shadowBlur = 0;
 }

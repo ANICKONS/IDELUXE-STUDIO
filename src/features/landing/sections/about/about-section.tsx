@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowRight, Briefcase, Headphones, Play, Wrench } from "lucide-react";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { PackCard } from "@/features/pack/pack-card";
-import { PackLockedCard } from "@/features/pack/pack-locked-card";
 import { AboutScreen } from "@/features/landing/sections/about/about-screen";
 import { sectionDecor } from "@/features/landing/decor";
 import { ABOUT_REEL_ORIGIN, ReelButton } from "@/features/reel";
@@ -17,9 +16,9 @@ const pillars = approachPillars.map((p) => ({ ...p, icon: pillarIcons[p.icon] })
  * «Обо мне» (IDELUXE is one person) — a menu category: on desktop it takes the whole screen under the header.
  *   ┌ intro (7 cols) ───────────────┬ floating video (5) ┐
  *   │            (free space grows on tall screens)       │
- *   ├ «Мой подход» + clients (7)    ┼ IDX PACK card (5)  ┤  ← the pack card sits under its own video,
- *   │                               │ IDX PACK 3D strip  │    the locked 3D pack under it
- * Phones: intro → video → packs → approach → clients.
+ *   ├ «Мой подход» + clients (7)    ┼ IDX PACK card (5)  ┤  ← the pack card sits under its own video
+ * Phones: intro → video → pack → approach → clients.
+ * IDX PACK 3D («Скоро») is shown only on /pricing.
  */
 export function AboutSection() {
   return (
@@ -70,10 +69,6 @@ export function AboutSection() {
               }
             />
           </div>
-
-          {/* The locked 3D pack: right under IDX PACK on phones, a full-width strip under both columns
-              on desktop (in one column it would make the row taller and leave a hole in «Мой подход») */}
-          <PackLockedCard compact className="reveal lg:col-span-12 lg:row-start-2" />
 
           <div className="flex min-w-0 flex-col gap-6 lg:col-span-7 lg:col-start-1 lg:row-start-1">
             <div className="glass reveal flex flex-1 flex-col rounded-[2rem] p-7 sm:p-8">

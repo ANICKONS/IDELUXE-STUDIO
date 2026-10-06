@@ -5,16 +5,20 @@ import { SpotlightTracker } from "@/components/ui/spotlight-tracker";
 import { Backdrop } from "@/features/backdrop";
 import { ChatWidget } from "@/features/chat";
 import { PageDecor } from "@/features/decor";
+import { BootScript, Preloader } from "@/features/preloader";
 import type { SessionUser } from "@/types/session";
 
 /**
- * Page chrome shared by every page: space backdrop, floating header, decor, footer, assistant.
- * If some future pages need another shell (e.g. a bare auth screen), move this into a route
- * group layout: app/(site)/layout.tsx.
+ * Page chrome shared by every page: first-load preloader, space backdrop, floating header, decor,
+ * footer, assistant. If some future pages need another shell (e.g. a bare auth screen), move this
+ * into a route group layout: app/(site)/layout.tsx (the preloader belongs to the root one).
  */
 export function SiteShell({ user = null, children }: { user?: SessionUser | null; children: React.ReactNode }) {
   return (
     <>
+      {/* Must come first in <body>: sets html[data-boot] before anything paints */}
+      <BootScript />
+      <Preloader />
       <a
         href={`#${MAIN_ID}`}
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-full focus:bg-accent-strong focus:px-4 focus:py-2"

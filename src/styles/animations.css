@@ -1,6 +1,109 @@
 /* ───────────────────────── Keyframes ─────────────────────────
    Used through the animate-* utilities (tokens.css) or directly from components. */
 
+/* Radius of the preloader's iris (components.css → «Preloader»). Registered, so it animates
+   smoothly; without @property support the iris simply snaps open while the overlay fades. */
+@property --iris {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: -200px;
+}
+
+/* ── Preloader ── */
+@keyframes preloader-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes preloader-word {
+  from {
+    opacity: 0;
+    letter-spacing: 0.75em;
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.34em;
+    filter: none;
+  }
+}
+
+@keyframes preloader-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+/* A glint running along the timeline track */
+@keyframes preloader-scan {
+  from {
+    background-position: -100% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes preloader-iris {
+  from {
+    --iris: -12vmax;
+  }
+  to {
+    --iris: 160vmax;
+  }
+}
+
+/* A light wave riding the edge of the iris */
+@keyframes preloader-ring {
+  from {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(3.2);
+  }
+}
+
+/* The mark flies at the camera and dissolves */
+@keyframes preloader-out {
+  to {
+    opacity: 0;
+    transform: scale(1.45);
+    filter: blur(10px);
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Panels arriving from the depth of space (the login card) */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: perspective(1200px) translate3d(0, 40px, -90px) rotateX(12deg);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
 /* Light rings of the platform under the hero editor */
 @keyframes pedestal-pulse {
   0%,
