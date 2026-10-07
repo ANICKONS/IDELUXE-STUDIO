@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { VideoAsset } from "@/config/media";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
+import { readTransitHold, subscribeTransitHold } from "@/lib/transit-hold";
 import { readVideoHold, subscribeVideoHold } from "@/lib/video-hold";
 import { cn } from "@/lib/utils";
 
@@ -15,9 +16,10 @@ function isLowData() {
 /**
  * Decorative looping video for backgrounds.
  * - Sources are attached only when the block approaches the viewport (lazy).
- * - Plays only while visible, pauses off-screen and while the reel player is open.
+ * - Plays only while visible, pauses off-screen, while the reel player is open and during page
+ *   switches (stops when the page starts leaving, starts once the new page has come in).
  * - prefers-reduced-motion / data saver → static poster (no motion for those who asked the OS for it).
- * - `tone="duotone"` recolours any footage into the site palette (violet → pink).
+ * - `tone="duotone"` recolours any footage into the site palette (graphite → champagne).
  */
 export function BackgroundVideo({
   video,
@@ -51,6 +53,7 @@ export function BackgroundVideo({
   const videoRef = useRef<HTMLVideoElement>(null);
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const held = useSyncExternalStore(subscribeVideoHold, readVideoHold, () => false);
+  const transit = useSyncExternalStore(subscribeTransitHold, readTransitHold, () => false);
 
   const [near, setNear] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -83,14 +86,14 @@ export function BackgroundVideo({
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !active) return;
-    if (visible && !held && !paused) {
+    if (visible && !held && !transit && !paused) {
       v.play().catch(() => {
         /* Autoplay blocked (e.g. iOS low-power mode): the poster stays visible. */
       });
     } else {
       v.pause();
     }
-  }, [active, visible, held, paused]);
+  }, [active, visible, held, transit, paused]);
 
   const footageClass = cn("absolute inset-0 size-full object-cover", duotone && "grayscale contrast-125 brightness-90", videoClassName);
 
@@ -130,9 +133,10 @@ export function BackgroundVideo({
         )}
         {duotone && (
           <>
-            {/* Shadows → deep violet, highlights → lilac/pink: any footage matches the palette */}
-            <div className="absolute inset-0 bg-[linear-gradient(135deg,#4b2fe0_0%,#8f80ff_55%,#e9a8ff_100%)] mix-blend-multiply" />
-            <div className="absolute inset-0 bg-[#140c46] mix-blend-screen" />
+            {/* Shadows → graphite, highlights → cool steel fading into warm champagne: any footage
+                matches the palette, like a black-and-white print toned by hand */}
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,#3a414e_0%,#9aa6b8_55%,#e2cba2_100%)] mix-blend-multiply" />
+            <div className="absolute inset-0 bg-[#0e0f12] mix-blend-screen" />
           </>
         )}
         {children}

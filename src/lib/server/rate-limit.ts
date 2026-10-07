@@ -25,13 +25,19 @@ export function hashKey(value: string): string {
 /** Counts one hit for `key`. Returns whether it's within `limit` for the current UTC day. */
 export function consumeDailyQuota(key: string, limit: number): { allowed: boolean; remaining: number } {
   const day = today();
-  // Drop yesterday's buckets once the map grows (cheap and keeps memory bounded).
+  // Keep memory bounded: drop yesterday's buckets, then the oldest ones (a Map iterates in insertion
+  // order). Never clear everything — a flood of fake keys must not reset everyone's counters.
   if (buckets.size >= MAX_KEYS) {
     for (const [k, b] of buckets) if (b.day !== day) buckets.delete(k);
-    if (buckets.size >= MAX_KEYS) buckets.clear();
+    for (const k of buckets.keys()) {
+      if (buckets.size < MAX_KEYS * 0.9) break;
+      if (k !== key) buckets.delete(k);
+    }
   }
   const bucket = buckets.get(key);
   const count = bucket && bucket.day === day ? bucket.count + 1 : 1;
+  // Re-insert, so a key in use moves to the end of the eviction order
+  buckets.delete(key);
   buckets.set(key, { day, count });
   return { allowed: count <= limit, remaining: Math.max(0, limit - count) };
 }

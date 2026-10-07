@@ -1,34 +1,27 @@
 import { Check } from "lucide-react";
-import { packFeatures, packStats, products } from "@/content/pack";
+import { packStats } from "@/content/pack";
+import { plans, type OneTimePlan } from "@/content/plans";
 import { formatNumber, formatRub } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-const appBadges: Record<string, string> = {
-  "Adobe After Effects": "Ae",
-  "Adobe Premiere Pro": "Pr",
-  "Vegas Pro": "V",
-};
-
 /**
- * IDX PACK card — mirrors the original IDELUXE PACK artwork.
- * `compact` is used on the landing, the full version on /pricing.
+ * IDX PACK on the landing («Обо мне», under the «Как устроен IDX PACK» video): what's inside, the
+ * price and what the purchase means. The full choice of plans is on /pricing.
  */
 export function PackCard({
-  compact = false,
   footer,
   titleAs: Title = "h3",
   className,
 }: {
-  compact?: boolean;
   footer?: React.ReactNode;
   titleAs?: "h2" | "h3";
   /** E.g. `reveal`: put effects with opacity/filter on the card itself, not on a wrapper (the glass would lose its blur). */
   className?: string;
 }) {
-  const pack = products["idx-pack"];
+  const pack = plans.pack as OneTimePlan;
 
   return (
-    <article className={cn("glass flex flex-col rounded-[2rem]", compact ? "p-7" : "p-8 sm:p-10", className)}>
+    <article className={cn("glass flex flex-col rounded-[2rem] p-7", className)}>
       <header>
         <div className="flex items-start gap-2">
           <Title className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{pack.title}</Title>
@@ -46,58 +39,20 @@ export function PackCard({
         ))}
       </ul>
 
-      <div className="mt-7">
-        <p className="text-sm font-semibold text-fg">Туториалы по:</p>
-        <ul className="mt-2 space-y-1.5">
-          {packFeatures.lessons.map((l) => (
-            <li key={l} className="flex items-center gap-2.5 text-[15px] text-muted">
-              <span className="inline-flex size-5 items-center justify-center rounded border border-accent/40 font-mono text-[9px] text-accent-soft">
-                {appBadges[l]}
-              </span>
-              {l}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {!compact && (
-        <ul className="mt-7 space-y-3 text-[15px] text-muted">
-          <li className="flex gap-3">
-            <Check size={18} className="mt-0.5 shrink-0 text-accent" />
-            <span>
-              Прямые ссылки на скачивание программ
-              <span className="block text-xs text-dim">{packFeatures.downloads}</span>
-            </span>
-          </li>
-          <li className="flex gap-3">
-            <Check size={18} className="mt-0.5 shrink-0 text-accent" />
-            {packFeatures.bonus}
-          </li>
-          <li className="flex gap-3">
-            <Check size={18} className="mt-0.5 shrink-0 text-accent" />
-            Разборы эффектов по разделам: VFX, SFX, Motion, переходы, цвет
-          </li>
-          <li className="flex gap-3">
-            <Check size={18} className="mt-0.5 shrink-0 text-accent" />
-            ИИ-ассистент по монтажу и поддержка в Telegram
-          </li>
-        </ul>
-      )}
+      <ul className="mt-6 space-y-2 text-[15px] text-muted">
+        <li className="flex gap-2.5">
+          <Check size={17} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+          Шаблоны и материалы для проектов
+        </li>
+        <li className="flex gap-2.5">
+          <Check size={17} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+          Обновления пака бесплатно
+        </li>
+      </ul>
 
       <div className="mt-auto pt-8">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="font-display text-lg text-dim line-through decoration-1">
-            {formatRub(pack.oldPriceRub)}
-            {pack.oldPriceUsd ? ` / ${pack.oldPriceUsd}$` : ""}
-          </span>
-          <span aria-hidden className="text-dim">→</span>
-          {/* compact (landing column is narrower): one size smaller, so the prices stay on one line */}
-          <span className={cn("font-display text-3xl font-semibold text-fg", !compact && "sm:text-4xl")}>
-            {formatRub(pack.priceRub)}
-            {pack.priceUsd ? <span className={cn("text-xl text-muted", !compact && "sm:text-2xl")}> / {pack.priceUsd}$</span> : null}
-          </span>
-        </div>
-        <p className="mt-1 text-xs text-dim">Разовый платёж · пожизненный доступ</p>
+        <span className="font-display text-3xl font-semibold text-fg">{formatRub(pack.priceRub)}</span>
+        <p className="mt-1 text-xs text-dim">{pack.note}</p>
         {footer && <div className="mt-6">{footer}</div>}
       </div>
     </article>

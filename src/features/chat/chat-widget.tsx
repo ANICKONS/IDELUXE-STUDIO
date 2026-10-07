@@ -4,13 +4,27 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUp, RotateCcw, Sparkles, Square, X } from "lucide-react";
 import { Markdown } from "@/features/chat/markdown";
 import { OPEN_CHAT_EVENT, type OpenChatDetail } from "@/features/chat/events";
-import { FOOTER_ID } from "@/components/layout/layout-ids";
 import { cn } from "@/lib/utils";
 
 type Message = { id: string; role: "user" | "assistant"; content: string; error?: boolean };
 
 const STORAGE_KEY = "idx-chat-v1";
 const MAX_STORED = 30;
+/** What goes to /api/chat with each question — the same limits the server applies. */
+const SEND_LAST = 12;
+const SEND_CHARS = 2000;
+
+/** Saved history is outside data: keep only well-formed messages (a broken entry must not crash every page). */
+function restore(value: unknown): Message[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(
+      (m): m is Message =>
+        !!m && typeof m === "object" && typeof m.id === "string" && (m.role === "user" || m.role === "assistant") && typeof m.content === "string",
+    )
+    .slice(-MAX_STORED)
+    .map(({ id, role, content, error }) => ({ id, role, content, error: error === true || undefined }));
+}
 
 const suggestions = [
   "Как сделать плавный зум в After Effects?",
@@ -26,7 +40,6 @@ export function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
-  const [bottomOffset, setBottomOffset] = useState(0);
   const [hydrated, setHydrated] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -40,7 +53,7 @@ export function ChatWidget() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration from localStorage
-      if (saved) setMessages(JSON.parse(saved) as Message[]);
+      if (saved) setMessages(restore(JSON.parse(saved)));
     } catch {
       /* ignore corrupted storage */
     }
@@ -55,29 +68,6 @@ export function ChatWidget() {
       /* storage full or disabled */
     }
   }, [messages, streaming, hydrated]);
-
-  // Keep the launcher above the footer ("над футером").
-  useEffect(() => {
-    let frame = 0;
-    const update = () => {
-      const footer = document.getElementById(FOOTER_ID);
-      if (!footer) return;
-      const overlap = window.innerHeight - footer.getBoundingClientRect().top;
-      setBottomOffset(overlap > 0 ? overlap : 0);
-    };
-    const onScroll = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(update);
-    };
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
 
   // Open from anywhere via OpenChatButton.
   useEffect(() => {
@@ -142,7 +132,8 @@ export function ChatWidget() {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: history.map(({ role, content }) => ({ role, content })) }),
+          // Only what the server reads (last 12, 2000 chars each): a long chat never outgrows the body limit
+          body: JSON.stringify({ messages: history.slice(-SEND_LAST).map(({ role, content }) => ({ role, content: content.slice(0, SEND_CHARS) })) }),
           signal: controller.signal,
         });
 
@@ -186,6 +177,8 @@ export function ChatWidget() {
     }
   };
 
+  // The launcher stays put in the corner, also over the footer: where the footer card would run
+  // under it, the footer leaves an empty strip at the bottom for it (footer.tsx)
   const baseBottom = 16;
 
   return (
@@ -201,14 +194,14 @@ export function ChatWidget() {
         data-open={open || undefined}
         className="pop-panel glass glass-strong fixed right-3 z-[60] flex w-[min(410px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[1.75rem] sm:right-6"
         style={{
-          bottom: baseBottom + bottomOffset + 72,
-          height: `min(620px, calc(100dvh - ${baseBottom + bottomOffset + 72 + 88}px))`,
+          bottom: baseBottom + 72,
+          height: `min(620px, calc(100dvh - ${baseBottom + 72 + 88}px))`,
           minHeight: 320,
         }}
       >
           <header className="flex items-center gap-3 border-b border-white/6 px-4 py-3.5">
-            <span className="relative inline-flex size-10 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#a497ff,#5241f0)] shadow-[inset_0_1px_0_rgb(255_255_255/0.4)]">
-              <Sparkles size={18} className="text-white" />
+            <span className="relative inline-flex size-10 items-center justify-center rounded-2xl border border-accent/25 bg-[linear-gradient(135deg,#2c2f38,#0e0f12)] shadow-[inset_0_1px_0_rgb(255_255_255/0.14)]">
+              <Sparkles size={18} className="text-accent" />
               <span className="absolute -right-0.5 -bottom-0.5 size-3 rounded-full border-2 border-ink-900 bg-teal" />
             </span>
             <div className="min-w-0 flex-1">
@@ -301,14 +294,16 @@ export function ChatWidget() {
         aria-expanded={open}
         aria-controls="chat-panel"
         aria-label={open ? "Закрыть ИИ-ассистента" : "Открыть ИИ-ассистента по монтажу"}
-        className={cn(
-          "group glass glass-strong fixed right-3 z-[60] flex size-14 items-center justify-center rounded-full transition-[bottom] duration-200 sm:right-6",
-          !open && messages.length === 0 && "animate-pulse-ring",
-        )}
-        style={{ bottom: baseBottom + bottomOffset }}
+        className="group glass glass-strong fixed right-3 z-[60] flex size-14 items-center justify-center rounded-full sm:right-6"
+        style={{ bottom: baseBottom }}
       >
-        <span className="absolute inset-1.5 -z-10 rounded-full bg-[linear-gradient(135deg,#a497ff,#5241f0)] opacity-90 shadow-[inset_0_1px_0_rgb(255_255_255/0.45)] transition group-hover:opacity-100" />
-        {open ? <X size={22} className="text-white" /> : <Sparkles size={22} className="text-white" />}
+        {/* Until the first question: a soft ring keeps spreading out of the launcher */}
+        {!open && messages.length === 0 && (
+          <span aria-hidden className="pointer-events-none absolute inset-0 animate-ping-soft rounded-full border border-accent/60" />
+        )}
+        {/* Ivory key, like the primary buttons */}
+        <span className="absolute inset-1.5 -z-10 rounded-full bg-[linear-gradient(180deg,#fdfbf7,#ddd5c6)] opacity-95 shadow-[inset_0_1px_0_#fff,inset_0_-3px_8px_rgb(150_125_85/0.22)] transition group-hover:opacity-100" />
+        {open ? <X size={22} className="text-ink-950" /> : <Sparkles size={22} className="text-ink-950" />}
         {!open && (
           <span className="pointer-events-none absolute right-full mr-3 hidden rounded-full glass-soft bg-ink-900/80 px-3 py-1.5 text-xs whitespace-nowrap text-muted opacity-0 transition group-hover:opacity-100 md:block">
             Вопрос по монтажу?
@@ -327,9 +322,9 @@ function Bubble({ role, error, children }: { role: "user" | "assistant"; error?:
         className={cn(
           "max-w-[88%] rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed",
           isUser
-            ? "rounded-br-md bg-[linear-gradient(135deg,rgb(143_128_255/0.55),rgb(82_65_240/0.55))] text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25)]"
+            ? "rounded-br-md border border-white/10 bg-white/[0.1] text-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.12)]"
             : "glass-soft rounded-bl-md text-muted",
-          error && "border-pink/40 text-pink",
+          error && "border-rose/40 text-rose",
         )}
       >
         {children}

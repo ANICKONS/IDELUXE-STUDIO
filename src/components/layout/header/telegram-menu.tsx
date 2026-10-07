@@ -42,7 +42,7 @@ export function TelegramMenu({ className }: { className?: string }) {
           id="telegram-menu"
           // Solid color + gradient as separate utilities (a combined bg-[…] value is invalid CSS).
           // No backdrop-blur: it can't see the page from inside the header's own backdrop-filter.
-          className="absolute top-[calc(100%+14px)] right-0 w-72 animate-fade-up rounded-2xl border border-white/10 bg-[#070517] bg-[radial-gradient(120%_90%_at_50%_-30%,rgb(160_131_247/0.42),transparent_70%)] p-2 shadow-[0_24px_60px_-12px_rgb(0_0_0/0.8)]"
+          className="absolute top-[calc(100%+14px)] right-0 w-72 animate-fade-up rounded-2xl border border-white/10 bg-ink-900 bg-[radial-gradient(120%_90%_at_50%_-30%,rgb(var(--rgb-frost)/0.16),transparent_70%)] p-2 shadow-[0_24px_60px_-12px_rgb(0_0_0/0.8)]"
         >
           <ul className="grid gap-1">
             {telegramLinks.map((l) => (

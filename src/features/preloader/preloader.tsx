@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { LogoMarkDrawn } from "@/components/icons";
 import { BOOT_SEEN_KEY, isBackdropReady, setBootPhase } from "@/lib/boot";
 
 /** Shortest time on screen, ms since the navigation started: the logo has time to draw itself. */
-const MIN_FIRST = 1800;
+const MIN_FIRST = 1500;
 /** Reloads in the same tab: everything is cached, don't make the visitor wait. */
 const MIN_REPEAT = 500;
 /** Longest wait: after that the site opens even if something is still loading. */
@@ -125,31 +126,8 @@ export function Preloader() {
       <div ref={stageRef} aria-hidden className="preloader-stage">
         <div className="relative">
           <span className="preloader-halo" />
-          <svg width="88" height="88" viewBox="0 0 40 40" fill="none" className="relative block">
-            <defs>
-              <linearGradient id="pl-bg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#2b2380" />
-                <stop offset="1" stopColor="#0c0930" />
-              </linearGradient>
-              <linearGradient id="pl-fg" x1="8" y1="12" x2="32" y2="28" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#ffffff" />
-                <stop offset=".55" stopColor="#b3a8ff" />
-                <stop offset="1" stopColor="#e9a8ff" />
-              </linearGradient>
-            </defs>
-            {/* Same mark as LogoMark: the tile fills in, its frame and «IDX» draw themselves */}
-            <rect x="1" y="1" width="38" height="38" rx="11" fill="url(#pl-bg)" className="preloader-plate" />
-            <rect x="1.5" y="1.5" width="37" height="37" rx="10.5" stroke="#b5aaff" strokeOpacity=".55" pathLength={1} className="preloader-stroke" />
-            <path
-              d="M8.5 13v14M13 13v14h1.4a6.4 7 0 0 0 0-14ZM24.2 13l7.3 14M31.5 13l-7.3 14"
-              stroke="url(#pl-fg)"
-              strokeWidth="2.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              pathLength={1}
-              className="preloader-stroke preloader-stroke-late"
-            />
-          </svg>
+          {/* The IDX mark: its gold outlines draw themselves, then the glass and the gold fill in */}
+          <LogoMarkDrawn size={96} />
         </div>
 
         <p className="preloader-word mt-7 font-display text-sm font-semibold text-fg">IDELUXE</p>
@@ -162,8 +140,8 @@ export function Preloader() {
             </span>
           </div>
           <div className="preloader-track relative mt-2.5 h-px rounded-full bg-white/10">
-            <div className="preloader-bar absolute inset-0 rounded-full bg-gradient-to-r from-accent-strong via-accent to-pink" />
-            <div className="preloader-head absolute -top-[3px] h-[7px] w-px bg-pink shadow-[0_0_8px_1px_rgb(233_168_255/0.9)]" />
+            <div className="preloader-bar absolute inset-0 rounded-full bg-gradient-to-r from-accent-strong/60 via-accent to-accent-soft" />
+            <div className="preloader-head absolute -top-[3px] h-[7px] w-px bg-accent-soft shadow-[0_0_8px_1px_rgb(var(--rgb-accent)/0.7)]" />
           </div>
           <div className="mt-2.5 flex justify-between">
             <span ref={codeRef} className="tabular-nums">

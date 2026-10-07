@@ -30,11 +30,6 @@ export type PlanetView = {
   /** Camera orbit around the planet, rad (camera.ts → Pose). */
   yaw: number;
   pitch: number;
-  /**
-   * City-light cells per planet radius. Tied to the screen, not to the animated radius: otherwise
-   * the lights would reshuffle every frame while the camera moves.
-   */
-  cityCells: number;
 };
 
 export type Planet = {
@@ -124,9 +119,11 @@ function setup(gl: WebGLRenderingContext, small: boolean): Resources {
   gl.enableVertexAttribArray(0);
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
-  // Power-of-two map, so it can wrap around the planet (REPEAT) in WebGL 1
+  // Power-of-two map, so it can wrap around the planet (REPEAT) in WebGL 1. Wide screens get 4K:
+  // the landing planet is ~7000 CSS px around, a 2K map made its coastlines and clouds soft
+  // (32 MB of GPU memory, baked once over ~30 frames)
   const maxSize = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
-  const tw = small || maxSize < 2048 ? 1024 : 2048;
+  const tw = small || maxSize < 2048 ? 1024 : window.innerWidth >= 1200 && maxSize >= 4096 ? 4096 : 2048;
   const size: [number, number] = [tw, tw / 2];
   const map = gl.createTexture();
   if (!map) throw new Error("planet: createTexture failed");
@@ -147,7 +144,7 @@ function setup(gl: WebGLRenderingContext, small: boolean): Resources {
   const draw = program(gl, PLANET_FRAG);
   const bake = program(gl, SURFACE_FRAG);
   const u: Resources["u"] = {};
-  for (const name of ["uMap", "uCanvas", "uScale", "uPlanet", "uGround", "uSky", "uSun", "uCity"]) u[name] = gl.getUniformLocation(draw, name);
+  for (const name of ["uMap", "uTexel", "uCanvas", "uScale", "uPlanet", "uGround", "uSky", "uSun"]) u[name] = gl.getUniformLocation(draw, name);
   u.uSize = gl.getUniformLocation(bake, "uSize");
 
   gl.disable(gl.DEPTH_TEST);
@@ -168,7 +165,9 @@ function release(gl: WebGLRenderingContext, res: Resources) {
 function bakeStrips(gl: WebGLRenderingContext, res: Resources, all: boolean) {
   if (!res.bake || !res.fbo) return true;
   const [tw, th] = res.size;
-  const rows = all ? th - res.baked : Math.min(STRIP, th - res.baked);
+  // Same pixel count per frame whatever the map size (STRIP rows of a 2K map)
+  const strip = Math.max(16, Math.round((STRIP * 2048) / tw));
+  const rows = all ? th - res.baked : Math.min(strip, th - res.baked);
   gl.bindFramebuffer(gl.FRAMEBUFFER, res.fbo);
   gl.viewport(0, 0, tw, th);
   gl.enable(gl.SCISSOR_TEST);
@@ -268,6 +267,7 @@ export function createPlanet(canvas: HTMLCanvasElement): Planet | null {
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, res.map);
       gl.uniform1i(u.uMap, 0);
+      gl.uniform2f(u.uTexel, 1 / res.size[0], 1 / res.size[1]);
       gl.uniform2f(u.uCanvas, canvas.width, canvas.height);
       gl.uniform1f(u.uScale, scale);
       gl.uniform3f(u.uPlanet, view.x, view.y, view.r);
@@ -275,7 +275,6 @@ export function createPlanet(canvas: HTMLCanvasElement): Planet | null {
       gl.uniformMatrix3fv(u.uGround, false, columnMajor(mul(mul(rotY(view.spin), AXIS), cam)));
       gl.uniformMatrix3fv(u.uSky, false, columnMajor(mul(mul(rotY(view.clouds), AXIS), cam)));
       gl.uniform3f(u.uSun, sun[0], sun[1], sun[2]);
-      gl.uniform1f(u.uCity, view.cityCells);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.disable(gl.SCISSOR_TEST);
       // Fade in once the first real frame is on screen
@@ -299,26 +298,26 @@ export function drawPlanetFallback(ctx: CanvasRenderingContext2D, g: { x: number
   const { x, y, r } = g;
   if (y - r - 160 > ctx.canvas.clientHeight) return;
   const halo = ctx.createRadialGradient(x, y, r, x, y, r + 160);
-  halo.addColorStop(0, "rgb(143 128 255 / 0.26)");
-  halo.addColorStop(0.25, "rgb(107 91 255 / 0.1)");
-  halo.addColorStop(1, "rgb(107 91 255 / 0)");
+  halo.addColorStop(0, "rgb(120 160 230 / 0.24)");
+  halo.addColorStop(0.25, "rgb(80 120 200 / 0.09)");
+  halo.addColorStop(1, "rgb(80 120 200 / 0)");
   ctx.fillStyle = halo;
   ctx.beginPath();
   ctx.arc(x, y, r + 160, 0, Math.PI * 2);
   ctx.fill();
 
   const body = ctx.createRadialGradient(x, y - r * 0.2, r * 0.7, x, y, r);
-  body.addColorStop(0, "#04030d");
-  body.addColorStop(0.8, "#0a0822");
-  body.addColorStop(1, "#2b2170");
+  body.addColorStop(0, "#050608");
+  body.addColorStop(0.8, "#0b0e14");
+  body.addColorStop(1, "#22324d");
   ctx.fillStyle = body;
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.strokeStyle = "rgb(214 208 255 / 0.4)";
+  ctx.strokeStyle = "rgb(214 226 245 / 0.4)";
   ctx.lineWidth = 1.5;
-  ctx.shadowColor = "rgb(143 128 255 / 0.7)";
+  ctx.shadowColor = "rgb(120 160 230 / 0.6)";
   ctx.shadowBlur = 16;
   ctx.stroke();
   ctx.shadowBlur = 0;

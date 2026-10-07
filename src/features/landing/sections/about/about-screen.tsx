@@ -18,17 +18,20 @@ export function AboutScreen() {
     <div className="group/hint pointer-events-none relative mx-auto w-full max-w-[560px] lg:max-w-none">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-[4%] -z-10 rounded-full bg-[radial-gradient(closest-side,rgb(64_84_255/0.5),rgb(107_91_255/0.16)_62%,transparent)] blur-2xl"
+        className="pointer-events-none absolute inset-[4%] -z-10 rounded-full bg-[radial-gradient(closest-side,rgb(var(--rgb-frost)/0.22),rgb(var(--rgb-accent)/0.07)_62%,transparent)] blur-2xl"
       />
 
       <div className="[perspective:1800px]">
         <div className="[transform:rotateY(-7deg)_rotateX(3deg)] lg:[transform:rotateY(-11deg)_rotateX(4deg)]">
           <div className="animate-reel-float">
             <div id={ABOUT_REEL_ORIGIN} className="relative aspect-[6/5]">
+              {/* The promo was graded for the old violet brand: toned down to steel, so it sits in
+                  the graphite palette (the player shows it in its original colours) */}
               <BackgroundVideo
                 video={landingVideos.aboutLoop}
                 className="absolute inset-0"
                 mediaClassName="mask-dissolve-screen"
+                videoClassName="saturate-[0.28] sepia-[0.18] brightness-95"
               />
               {/* Rides the float + tilt together with the video */}
               <ClickHint label="Смотреть со звуком" className="max-sm:scale-[0.85]" />

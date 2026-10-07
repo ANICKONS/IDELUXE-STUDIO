@@ -3,9 +3,7 @@ import { ArrowRight, Briefcase, Headphones, Play, Wrench } from "lucide-react";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { PackCard } from "@/features/pack/pack-card";
 import { AboutScreen } from "@/features/landing/sections/about/about-screen";
-import { sectionDecor } from "@/features/landing/decor";
 import { ABOUT_REEL_ORIGIN, ReelButton } from "@/features/reel";
-import { Decor3D } from "@/features/decor";
 import { landingAnchors, routes } from "@/config/routes";
 import { approachPillars, clients } from "@/content/landing";
 
@@ -23,7 +21,6 @@ const pillars = approachPillars.map((p) => ({ ...p, icon: pillarIcons[p.icon] })
 export function AboutSection() {
   return (
     <section id={landingAnchors.about} className="section section-screen relative px-4">
-      <Decor3D items={sectionDecor.about} className="-z-10" />
       <div className="mx-auto flex max-w-6xl flex-1 flex-col lg:pb-6">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-6">
           <div className="lg:col-span-7">
@@ -38,7 +35,7 @@ export function AboutSection() {
               description="IDELUXE — мой никнейм. Я монтажёр и моушн-дизайнер: делаю клипы, рекламу и контент для артистов, брендов и блогеров. Здесь собрал всё, чем пользуюсь сам, — разборы эффектов и пак материалов для работы."
             />
             <p className="reveal mt-6 max-w-xl font-display text-lg text-fg/90">
-              Монтаж — это не резать кадры, а <span className="text-neon-glow">создавать эмоции</span>.
+              Монтаж — это не резать кадры, а <span className="text-glow">создавать эмоции</span>.
             </p>
             <div className="reveal mt-8 flex flex-wrap gap-3">
               <ReelButton reel="about" origin={`#${ABOUT_REEL_ORIGIN}`} className="btn btn-primary btn-md">
@@ -60,11 +57,10 @@ export function AboutSection() {
         <div className="mt-16 grid grid-cols-1 gap-6 lg:mt-auto lg:grid-cols-12 lg:pt-12">
           <div className="flex flex-col lg:col-span-5 lg:col-start-8 lg:row-start-1">
             <PackCard
-              compact
               className="reveal flex-1"
               footer={
                 <Link href={routes.pricing} className="btn btn-primary btn-md w-full">
-                  Подробнее о паке <ArrowRight size={16} />
+                  PACK, подписка или всё вместе <ArrowRight size={16} />
                 </Link>
               }
             />

@@ -24,7 +24,7 @@ export function MobileNav({
   return (
     // Header bottom is 72px in both states (72px bar, or 12px offset + 58px floating panel + margin).
     <div id="mobile-nav" className="fixed inset-x-0 top-[72px] bottom-0 animate-fade-up overflow-y-auto bg-ink-950/90 backdrop-blur-2xl lg:hidden">
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(60%_100%_at_50%_0%,rgb(107_91_255/0.35),transparent_70%)]" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(60%_100%_at_50%_0%,rgb(var(--rgb-frost)/0.12),transparent_70%)]" />
       <nav aria-label="Мобильная навигация" className="relative mx-auto max-w-lg px-4 pt-6 pb-12">
         <Link
           href={user ? routes.profile : routes.login}
@@ -43,14 +43,14 @@ export function MobileNav({
                 aria-current={isActive(item) ? (item.section ? "location" : "page") : undefined}
                 className={cn(
                   "flex h-14 items-center justify-between rounded-2xl border px-5 font-display text-[13px] tracking-[0.12em] uppercase transition",
-                  isActive(item) ? "border-accent/40 bg-accent/10 text-fg" : "border-white/8 bg-white/[0.04] text-fg/70",
+                  isActive(item) ? "border-white/16 bg-white/[0.07] text-fg" : "border-white/8 bg-white/[0.04] text-fg/70",
                 )}
               >
-                <span className={cn("inline-flex items-center gap-2", item.highlight && "text-neon-glow")}>
+                <span className={cn("inline-flex items-center gap-2", item.highlight && "text-glow")}>
                   {item.highlight && <Star size={14} className="fill-current" aria-hidden />}
                   {item.label}
                 </span>
-                {isActive(item) && <span aria-hidden className="size-[7px] rotate-45 rounded-[1.5px] bg-accent-soft shadow-[0_0_10px_2px_rgb(160_148_255/0.85)]" />}
+                {isActive(item) && <span aria-hidden className="size-[7px] rotate-45 rounded-[1.5px] bg-accent shadow-[0_0_10px_1px_rgb(var(--rgb-accent)/0.6)]" />}
               </HashLink>
             </li>
           ))}

@@ -1,28 +1,25 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, UserRoundPlus } from "lucide-react";
 import { TelegramIcon } from "@/components/icons";
 import { AppTile } from "@/components/ui/app-tile";
 import { BackgroundVideo } from "@/components/ui/background-video";
-import { Decor3D } from "@/features/decor";
-import { sectionDecor } from "@/features/landing/decor";
 import { landingVideos } from "@/config/media";
-import { routes } from "@/config/routes";
+import { registerHref, routes } from "@/config/routes";
 import { site } from "@/config/site";
 
 export function CtaSection() {
   return (
     // Continues the FAQ screen (same menu category), so it sits closer than the usual block gap
     <section className="section relative px-4 [--section-gap:4.5rem]">
-      <Decor3D items={sectionDecor.cta} className="-z-10" />
       <div className="glass reveal relative mx-auto max-w-6xl overflow-hidden rounded-[2.5rem] px-6 py-16 text-center sm:px-12 sm:py-24">
         {/* «бэк», recoloured into the palette.
             -z-20 keeps the video under the glass rim (::before) but above the card background. */}
         <BackgroundVideo video={landingVideos.back} tone="duotone" className="absolute inset-0 -z-20" mediaClassName="opacity-75">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_65%_at_50%_50%,rgb(4_3_13/0.72),rgb(4_3_13/0.3)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_65%_at_50%_50%,rgb(var(--rgb-ink)/0.72),rgb(var(--rgb-ink)/0.3)_100%)]" />
         </BackgroundVideo>
         <div
           aria-hidden
-          className="absolute inset-0 -z-10 bg-[radial-gradient(60%_80%_at_50%_0%,rgb(107_91_255/0.3),transparent_70%)]"
+          className="absolute inset-0 -z-10 bg-[radial-gradient(60%_80%_at_50%_0%,rgb(var(--rgb-accent)/0.12),transparent_70%)]"
         />
         <div aria-hidden className="pointer-events-none absolute -top-6 -left-6 hidden rotate-[-14deg] opacity-70 md:block">
           <AppTile code="Pr" size={96} />
@@ -36,16 +33,23 @@ export function CtaSection() {
           Готов смонтировать свой <span className="text-gradient">лучший ролик</span>?
         </h2>
         <p className="mx-auto mt-5 max-w-xl text-muted">
-          Открой туториалы, IDX PACK и ассистента уже сегодня. Один платёж — и всё остаётся с тобой навсегда.
+          Начни с бесплатного аккаунта: вводные туториалы и программы откроются сразу. Нужно больше — бери IDX PACK, подписку или всё
+          вместе.
         </p>
         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link href={routes.pricing} className="btn btn-primary btn-lg w-full sm:w-auto">
-            Получить доступ <ArrowRight size={18} />
+            Выбрать тариф <ArrowRight size={18} />
           </Link>
-          <a href={site.telegram.personal.url} target="_blank" rel="noopener noreferrer" className="btn btn-glass btn-lg w-full sm:w-auto">
-            <TelegramIcon size={18} /> Задать вопрос
-          </a>
+          <Link href={registerHref} className="btn btn-glass btn-lg w-full sm:w-auto">
+            <UserRoundPlus size={18} /> Создать аккаунт
+          </Link>
         </div>
+        <p className="mt-6 text-sm text-dim">
+          Есть вопрос?{" "}
+          <a href={site.telegram.personal.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent-soft hover:text-fg">
+            <TelegramIcon size={14} /> Напиши IDELUXE
+          </a>
+        </p>
       </div>
     </section>
   );

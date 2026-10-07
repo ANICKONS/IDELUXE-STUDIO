@@ -6,7 +6,7 @@ export type NavItem = {
   href: string;
   /** Landing block id: the tab is highlighted while this block is on screen. */
   section?: string;
-  /** Neon accent («Тарифы»). */
+  /** Warm glow accent («Тарифы»). */
   highlight?: boolean;
 };
 
@@ -14,10 +14,11 @@ export type NavLink = { label: string; href: string };
 
 /**
  * Header menu. «Главная», «Обо мне», «Платформа», «FAQ» are landing anchors; «Ресурсы», «Тарифы» are pages.
- * «Главная» leads to the editor window (#home in hero-section.tsx), so the whole window is visible.
+ * «Главная» leads to the very top: the header is in its full state and the whole first screen
+ * (headline, editor, numbers) is visible.
  */
 export const mainNav: NavItem[] = [
-  { label: "Главная", href: anchorHref(landingAnchors.home), section: landingAnchors.home },
+  { label: "Главная", href: anchorHref(landingAnchors.top), section: landingAnchors.home },
   // IDELUXE is one person, so the block is «Обо мне»
   { label: "Обо мне", href: anchorHref(landingAnchors.about), section: landingAnchors.about },
   { label: "Платформа", href: anchorHref(landingAnchors.platform), section: landingAnchors.platform },

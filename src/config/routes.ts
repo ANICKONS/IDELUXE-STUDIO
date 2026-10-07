@@ -17,9 +17,9 @@ export const routes = {
 
 /** Landing anchors. Ids are set on the sections in src/features/landing. */
 export const landingAnchors = {
-  /** Very top of the page (logo link). */
+  /** Very top of the page: the hero (logo and «Главная» links). */
   top: "top",
-  /** «Главная»: the editor window in the hero, not the headline (see hero-section.tsx). */
+  /** «Главная» as a menu section (highlighted above «Обо мне»); not a DOM id, the link goes to `top`. */
   home: "home",
   about: "about",
   audience: "audience",
@@ -28,6 +28,9 @@ export const landingAnchors = {
 } as const;
 
 export type LandingAnchor = (typeof landingAnchors)[keyof typeof landingAnchors];
+
+/** The sign-in card opened on sign-up (features/auth reads the hash). */
+export const registerHref = `${routes.login}#register`;
 
 /** "/#about" — link to a landing block from any page. */
 export const anchorHref = (id: LandingAnchor) => `${routes.home}#${id}`;

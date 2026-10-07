@@ -3,13 +3,17 @@ import { isAiConfigured, serverEnv } from "@/config/env.server";
 import { buildSystemPrompt } from "@/features/chat/system-prompt";
 import { clientIp } from "@/lib/server/client-ip";
 import { consumeDailyQuota, hashKey } from "@/lib/server/rate-limit";
-import { isSameOrigin } from "@/lib/server/request";
+import { isSameOrigin, readJsonBody } from "@/lib/server/request";
 
 export const maxDuration = 60;
 
 const MAX_MESSAGES = 12;
 const MAX_CHARS = 2000;
+/** All messages together: keeps one request's token bill bounded. */
+const MAX_TOTAL_CHARS = 8000;
 const MAX_BODY_BYTES = 64 * 1024;
+/** Upstream errors are logged, but only the start (some providers echo the user's text). */
+const LOG_CHARS = 300;
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -25,6 +29,12 @@ function parseMessages(body: unknown): ChatMessage[] | null {
     if (trimmed) messages.push({ role, content: trimmed });
   }
   if (!messages.length || messages[messages.length - 1].role !== "user") return null;
+  // Oldest messages go first once the total is over budget; a conversation can't start with a
+  // made-up assistant turn (the client writes the history, so it's only a hint of context)
+  let total = messages.reduce((n, m) => n + m.content.length, 0);
+  while (messages.length > 1 && (total > MAX_TOTAL_CHARS || messages[0].role === "assistant")) {
+    total -= messages.shift()!.content.length;
+  }
   return messages;
 }
 
@@ -46,24 +56,22 @@ const streamHeaders = {
 
 /**
  * AI assistant. Public endpoint (no auth), protected by:
- * - same-origin check (other sites can't call it from a browser);
- * - body size and message limits;
- * - daily per-IP quota (in memory, see lib/server/rate-limit.ts).
+ * - same-origin check (only this site's pages; requests without Origin are refused);
+ * - body size (counted while reading), message count, per-message and total length limits;
+ * - daily quotas: per IP and for the whole site (in memory, see lib/server/rate-limit.ts).
  */
 export async function POST(request: NextRequest) {
   if (!isSameOrigin(request)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (Number(request.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) {
-    return NextResponse.json({ error: "Слишком длинный запрос" }, { status: 413 });
-  }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Некорректный запрос" }, { status: 400 });
+  const read = await readJsonBody(request, MAX_BODY_BYTES);
+  if (!read.ok) {
+    return read.status === 413
+      ? NextResponse.json({ error: "Слишком длинный запрос" }, { status: 413 })
+      : NextResponse.json({ error: "Некорректный запрос" }, { status: 400 });
   }
+  const body = read.value;
 
   const messages = parseMessages(body);
   if (!messages) return NextResponse.json({ error: "Некорректный формат сообщений" }, { status: 400 });
@@ -80,6 +88,10 @@ export async function POST(request: NextRequest) {
   const quota = consumeDailyQuota(`chat:${hashKey(clientIp(request))}`, serverEnv.chatDailyLimit);
   if (!quota.allowed) {
     return NextResponse.json({ error: "Лимит сообщений на сегодня исчерпан. Возвращайся завтра!" }, { status: 429 });
+  }
+  // Site-wide ceiling: rotating IPs can't run up the bill
+  if (!consumeDailyQuota("chat:global", serverEnv.chatGlobalDailyLimit).allowed) {
+    return NextResponse.json({ error: "Ассистент на сегодня отдыхает. Возвращайся завтра!" }, { status: 429 });
   }
 
   let extraBody: Record<string, unknown> = {};
@@ -99,13 +111,15 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${serverEnv.aiApiKey}`,
       },
+      // Provider extras first: they must not override the fixed fields (e.g. stream: false
+      // would break the SSE parsing below)
       body: JSON.stringify({
+        ...extraBody,
         model: serverEnv.aiModel,
         messages: [{ role: "system", content: buildSystemPrompt() }, ...messages],
         stream: true,
         temperature: 0.5,
-        max_tokens: 1200,
-        ...extraBody,
+        max_tokens: 900,
       }),
       signal: AbortSignal.any([request.signal, AbortSignal.timeout(55_000)]),
     });
@@ -115,7 +129,8 @@ export async function POST(request: NextRequest) {
   }
 
   if (!upstream.ok || !upstream.body) {
-    console.error("[chat] upstream error", upstream.status, await upstream.text().catch(() => ""));
+    const detail = await upstream.text().catch(() => "");
+    console.error("[chat] upstream error", upstream.status, detail.slice(0, LOG_CHARS));
     return NextResponse.json({ error: "Ассистент временно недоступен. Попробуй ещё раз." }, { status: 502 });
   }
 
@@ -124,25 +139,33 @@ export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
   let buffer = "";
 
+  const emit = (line: string, controller: TransformStreamDefaultController<Uint8Array>) => {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("data:")) return;
+    const data = trimmed.slice(5).trim();
+    if (!data || data === "[DONE]") return;
+    try {
+      const json = JSON.parse(data);
+      const delta: unknown = json?.choices?.[0]?.delta?.content;
+      if (typeof delta === "string" && delta) controller.enqueue(encoder.encode(delta));
+    } catch {
+      // Partial/keep-alive line — skip.
+    }
+  };
+
   const stream = upstream.body.pipeThrough(
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
         buffer += decoder.decode(chunk, { stream: true });
         const lines = buffer.split("\n");
         buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data:")) continue;
-          const data = trimmed.slice(5).trim();
-          if (!data || data === "[DONE]") continue;
-          try {
-            const json = JSON.parse(data);
-            const delta: unknown = json?.choices?.[0]?.delta?.content;
-            if (typeof delta === "string" && delta) controller.enqueue(encoder.encode(delta));
-          } catch {
-            // Partial/keep-alive line — skip.
-          }
-        }
+        for (const line of lines) emit(line, controller);
+      },
+      // The last line may come without a trailing newline
+      flush(controller) {
+        buffer += decoder.decode();
+        if (buffer) emit(buffer, controller);
+        buffer = "";
       },
     }),
   );

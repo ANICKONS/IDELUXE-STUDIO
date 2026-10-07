@@ -188,9 +188,9 @@ export function Header({ user }: { user: SessionUser | null }) {
               <span
                 ref={pillRef}
                 aria-hidden
-                className="pointer-events-none absolute top-0 left-0 h-full rounded-full border border-white/12 bg-white/[0.08] opacity-0 shadow-[inset_0_1px_0_rgb(255_255_255/0.16),0_6px_18px_-8px_rgb(107_91_255/0.8)] transition-[transform,width,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                className="pointer-events-none absolute top-0 left-0 h-full rounded-full border border-white/12 bg-white/[0.07] opacity-0 shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_6px_18px_-10px_rgb(0_0_0/0.9)] transition-[transform,width,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
               >
-                <span className="absolute -bottom-[4px] left-1/2 size-[7px] -translate-x-1/2 rotate-45 rounded-[1.5px] bg-accent-soft shadow-[0_0_10px_2px_rgb(160_148_255/0.85)]" />
+                <span className="absolute -bottom-[4px] left-1/2 size-[7px] -translate-x-1/2 rotate-45 rounded-[1.5px] bg-accent shadow-[0_0_10px_1px_rgb(var(--rgb-accent)/0.6)]" />
               </span>
               {mainNav.map((item) => {
                 const active = item.href === activeHref;
@@ -202,7 +202,7 @@ export function Header({ user }: { user: SessionUser | null }) {
                       aria-current={active ? (item.section ? "location" : "page") : undefined}
                       className={cn(
                         "inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-[12px] font-semibold tracking-[0.14em] uppercase transition-colors duration-300",
-                        item.highlight ? "text-neon-glow hover:brightness-125" : active ? "text-fg" : "text-fg/50 hover:text-fg",
+                        item.highlight ? "text-glow hover:brightness-110" : active ? "text-fg" : "text-fg/50 hover:text-fg",
                       )}
                     >
                       {item.highlight && <Star size={13} className="fill-current" aria-hidden />}
@@ -245,11 +245,11 @@ export function Header({ user }: { user: SessionUser | null }) {
           aria-hidden
           className="pointer-events-none absolute inset-x-0 -bottom-px h-px transition-[left,right] duration-500 group-data-[floating=true]/header:inset-x-7"
         >
-          <div className="h-full bg-gradient-to-r from-accent-strong/0 via-accent to-pink" style={{ width: "calc(var(--progress) * 100%)" }} />
-          <div
-            className="absolute -top-[4px] h-[9px] w-px bg-pink shadow-[0_0_8px_1px_rgb(233_168_255/0.9)]"
-            style={{ left: "calc(var(--progress) * 100%)" }}
-          />
+          {/* transform, not width/left: no layout on every scroll frame */}
+          <div className="h-full origin-left bg-gradient-to-r from-accent-strong/0 via-accent/70 to-accent-soft" style={{ transform: "scaleX(var(--progress))" }} />
+          <div className="absolute inset-0" style={{ transform: "translateX(calc(var(--progress) * 100%))" }}>
+            <div className="absolute -top-[4px] left-0 h-[9px] w-px bg-accent-soft shadow-[0_0_8px_1px_rgb(var(--rgb-accent)/0.7)]" />
+          </div>
         </div>
       </div>
 

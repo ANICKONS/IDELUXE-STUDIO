@@ -19,7 +19,9 @@ type Meteor = { x: number; y: number; dx: number; dy: number; t: number };
 /** Space dust: a direction from the centre and a depth (1 far → NEAR right at the camera). */
 type Mote = { angle: number; z: number; c: number };
 
-const STAR_COLORS = ["238 236 255", "201 194 255", "233 168 255", "110 231 216"];
+/** White, pale blue, warm (K-type) and blue stars — the colours of a real night sky. */
+const STAR_COLORS = ["240 241 246", "206 220 242", "247 228 198", "168 196 238"];
+const STAR_FILL = STAR_COLORS.map((c) => `rgb(${c})`);
 const METEOR_LIFE = 0.9;
 const MOTES = 40;
 const NEAR = 0.06;
@@ -113,8 +115,8 @@ export function createStarfield(): Starfield {
     const ty = hy - (meteor.dy / norm) * len;
     const a = Math.sin(Math.PI * k);
     const g = ctx.createLinearGradient(hx, hy, tx, ty);
-    g.addColorStop(0, `rgb(238 236 255 / ${0.85 * a})`);
-    g.addColorStop(1, "rgb(201 194 255 / 0)");
+    g.addColorStop(0, `rgb(244 244 248 / ${0.85 * a})`);
+    g.addColorStop(1, "rgb(206 220 242 / 0)");
     ctx.globalCompositeOperation = "lighter";
     ctx.strokeStyle = g;
     ctx.lineWidth = 1.4;
@@ -180,12 +182,14 @@ export function createStarfield(): Starfield {
         Math.abs(view.x - last.x) + Math.abs(view.y - last.y) + Math.abs(view.zoom - last.zoom) * w + Math.abs(view.drift - last.drift) * 0.035 > 0.3;
       if (moving) ctx.lineCap = "round";
 
+      // Colours are fixed strings, each star's brightness goes through globalAlpha: no new
+      // strings per star per frame (that was ~15k allocations a second)
       for (const s of stars) {
         const tw = 0.55 + 0.45 * Math.sin(time * s.tw + s.ph);
         const a = s.a * tw;
         if (a < 0.02) continue;
         place(s, view, p);
-        const color = `rgb(${STAR_COLORS[s.c]} / ${a.toFixed(3)})`;
+        const color = STAR_FILL[s.c];
         if (moving && last) {
           place(s, last, q);
           const dx = p[0] - q[0];
@@ -195,7 +199,8 @@ export function createStarfield(): Starfield {
           // dist too big = the star wrapped round the screen edge this frame: no trail
           if (len > 2 && dist < w * 0.25) {
             // The star's light spreads along the trail: longer trails are fainter
-            ctx.strokeStyle = `rgb(${STAR_COLORS[s.c]} / ${(a * Math.min(1, 0.3 + 5 / len)).toFixed(3)})`;
+            ctx.globalAlpha = a * Math.min(1, 0.3 + 5 / len);
+            ctx.strokeStyle = color;
             ctx.lineWidth = s.r * 1.6;
             ctx.beginPath();
             ctx.moveTo(p[0], p[1]);
@@ -204,9 +209,11 @@ export function createStarfield(): Starfield {
             continue;
           }
         }
+        ctx.globalAlpha = a;
         ctx.fillStyle = color;
         ctx.fillRect(p[0] - s.r, p[1] - s.r, s.r * 2, s.r * 2);
       }
+      ctx.globalAlpha = 1;
       prev = { ...view };
 
       drawDust(ctx, dt, view.dust);

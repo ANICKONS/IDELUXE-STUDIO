@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { ArrowUpRight, Clapperboard, Infinity as InfinityIcon, Package, Users } from "lucide-react";
+import { ArrowUpRight, Clapperboard, Infinity as InfinityIcon, Package, Sparkles, Users } from "lucide-react";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { AppTile } from "@/components/ui/app-tile";
 import { OpenChatButton } from "@/features/chat";
-import { Decor3D } from "@/features/decor";
-import { sectionDecor } from "@/features/landing/decor";
 import { landingAnchors, learnSectionHref, routes } from "@/config/routes";
 import { site } from "@/config/site";
 import { software } from "@/content/landing";
@@ -15,7 +13,6 @@ export function PlatformSection() {
   return (
     // section-screen: a menu category — on desktop it takes the whole screen under the header
     <section id={landingAnchors.platform} className="section section-screen relative px-4">
-      <Decor3D items={sectionDecor.platform} className="-z-10" />
       <div className="mx-auto max-w-6xl">
         <SectionHeading
           comp="COMP 04"
@@ -30,16 +27,17 @@ export function PlatformSection() {
 
         <div className="mt-14 grid gap-5 md:grid-cols-6">
           {/* Resources */}
-          <BentoCard className="md:col-span-4" icon={<Package size={22} />} title="Программы, плагины, расширения">
+          <BentoCard className="md:col-span-4" icon={<Package size={22} />} title="Программы, плагины, расширения" plan="LITE · PRO">
             <p>Прямые ссылки на программы и плагины, проверенные расширения и скрипты — с инструкциями по установке.</p>
-            {/* Programs taught in the pack; names wrap instead of being cut */}
-            <ul className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {/* Programs taught in the pack: name and purpose beside the icon. Two per row, so both
+                lines fit without cutting */}
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
               {software.map((s) => (
-                <li key={s.code} className="glass-soft flex min-w-0 items-center gap-3 rounded-2xl p-2.5 pr-3">
-                  <AppTile code={s.code} size={40} className="shrink-0" />
-                  <span className="min-w-0 leading-tight">
-                    <span className="block text-[13px] font-semibold text-fg">{s.name}</span>
-                    <span className="mt-0.5 hidden truncate text-[11px] text-dim sm:block">{s.role}</span>
+                <li key={s.code} className="glass-soft flex min-w-0 items-center gap-3.5 rounded-2xl p-3 pr-4">
+                  <AppTile code={s.code} size={44} className="shrink-0" />
+                  <span className="min-w-0 leading-snug">
+                    <span className="block text-[15px] font-semibold text-fg">{s.name}</span>
+                    <span className="mt-0.5 block text-[13px] text-muted">{s.role}</span>
                   </span>
                 </li>
               ))}
@@ -49,17 +47,43 @@ export function PlatformSection() {
             </Link>
           </BentoCard>
 
-          {/* Unlimited */}
-          <BentoCard className="md:col-span-2" icon={<InfinityIcon size={22} />} title="Безлимитный доступ">
-            <p>Платишь один раз — пользуешься всегда. Все обновления пака уже включены в стоимость.</p>
-            <div className="mt-6 flex items-end gap-2" aria-hidden>
-              <span className="font-display text-5xl leading-none font-bold text-gradient">∞</span>
-              <span className="pb-1 font-mono text-xs text-dim">дней доступа</span>
+          {/* The subscription: the platform keeps growing while it's on */}
+          <BentoCard className="md:col-span-2" icon={<InfinityIcon size={22} />} title="Платформа растёт">
+            <p>
+              Подписка открывает сайт: LITE — ресурсы, PRO — ещё туториалы и ИИ. Пока она действует, новые разборы, программы и плагины
+              появляются у тебя сами.
+            </p>
+            {/* A drawn infinity sign (the font's glyph looked blobby) with a caption under it, in the
+                middle of the card's free space */}
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 pt-8 pb-2 text-center">
+              <svg aria-hidden viewBox="0 0 48 24" fill="none" className="h-12 w-24 shrink-0 drop-shadow-[0_0_14px_rgb(var(--rgb-accent)/0.35)]">
+                <defs>
+                  <linearGradient id="inf-gold" x1="0" y1="0" x2="48" y2="24" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#ffffff" />
+                    <stop offset=".45" stopColor="#ecdcbd" />
+                    <stop offset="1" stopColor="#b8925a" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M24 12c-3.6-4.6-7.2-7-10.6-7a7 7 0 0 0 0 14c3.4 0 7-2.4 10.6-7Zm0 0c3.6 4.6 7.2 7 10.6 7a7 7 0 0 0 0-14c-3.4 0-7 2.4-10.6 7Z"
+                  stroke="url(#inf-gold)"
+                  strokeWidth="2.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="leading-snug">
+                <span className="block text-[15px] font-semibold text-fg">Новое каждый раз</span>
+                <span className="block text-[13px] text-muted">уроки, программы и плагины</span>
+              </span>
+              <Link href={routes.pricing} className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-accent-soft hover:text-fg">
+                Сравнить тарифы <ArrowUpRight size={16} />
+              </Link>
             </div>
           </BentoCard>
 
           {/* Tutorials: sections by topic, not a course plan */}
-          <BentoCard className="md:col-span-2" icon={<Clapperboard size={22} />} title="Туториалы по разделам">
+          <BentoCard className="md:col-span-2" icon={<Clapperboard size={22} />} title="Туториалы по разделам" plan="PRO">
             <p>Разборы конкретных эффектов и приёмов. Выбираешь раздел и смотришь в любом порядке — просмотренное отмечается в профиле.</p>
             <ul className="mt-6 flex flex-wrap gap-2" aria-label="Разделы туториалов">
               {tutorialCategories.map((c) => (
@@ -88,15 +112,12 @@ export function PlatformSection() {
             </a>
           </BentoCard>
 
-          {/* AI */}
-          <BentoCard
-            className="md:col-span-2"
-            icon={<span className="font-mono text-sm font-bold">AI</span>}
-            title="ИИ-ассистент по монтажу"
-            highlight
-          >
+          {/* AI: same icon as the assistant's launcher, same link style as the other cards */}
+          <BentoCard className="md:col-span-2" icon={<Sparkles size={22} />} title="ИИ-ассистент по монтажу" plan="PRO">
             <p>Знает After Effects, Premiere Pro и Vegas Pro. Подскажет настройки экспорта, эффект или горячую клавишу.</p>
-            <OpenChatButton className="btn btn-glass btn-sm mt-6 self-start">Задать вопрос</OpenChatButton>
+            <OpenChatButton className="mt-6 inline-flex items-center gap-1.5 self-start rounded-md text-sm font-semibold text-accent-soft hover:text-fg">
+              Задать вопрос ассистенту <ArrowUpRight size={16} />
+            </OpenChatButton>
           </BentoCard>
         </div>
       </div>
@@ -104,27 +125,22 @@ export function PlatformSection() {
   );
 }
 
+/** `plan`: the subscriptions that open this part of the platform (content/plans.ts), a tag in the corner. */
 function BentoCard({
   icon,
   title,
+  plan,
   children,
   className,
-  highlight,
 }: {
   icon: React.ReactNode;
   title: string;
+  plan?: string;
   children: React.ReactNode;
   className?: string;
-  highlight?: boolean;
 }) {
   return (
-    <article
-      className={cn(
-        "glass reveal flex flex-col rounded-[2rem] p-7 text-[15px] leading-relaxed text-muted",
-        highlight && "bg-[radial-gradient(120%_100%_at_100%_0%,rgb(143_128_255/0.22),transparent_60%)]",
-        className,
-      )}
-    >
+    <article className={cn("glass reveal flex flex-col rounded-[2rem] p-7 text-[15px] leading-relaxed text-muted", className)}>
       <div className="mb-4 flex items-center gap-4">
         <span
           aria-hidden
@@ -133,6 +149,12 @@ function BentoCard({
           {icon}
         </span>
         <h3 className="font-display text-lg leading-tight font-semibold text-fg">{title}</h3>
+        {plan && (
+          <span className="ml-auto shrink-0 self-start rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[10px] tracking-[0.14em] whitespace-nowrap text-accent-soft">
+            <span className="sr-only">Входит в подписку </span>
+            {plan}
+          </span>
+        )}
       </div>
       {children}
     </article>

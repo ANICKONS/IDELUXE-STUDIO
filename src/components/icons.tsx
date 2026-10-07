@@ -1,30 +1,93 @@
 import type { SVGProps } from "react";
+import { cn } from "@/lib/utils";
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 
-export function LogoMark({ size = 32, ...props }: IconProps) {
+/**
+ * The IDX mark, drawn for the screen after the original artwork (assets/brand/idx-icon.png, whose
+ * glassy details turn to mush at logo sizes): a gold «i», a gold «D» with a black counter and a
+ * gold «X» in it. Flat shapes on a 32 grid with even 4–5 unit strokes, so it reads from 16 px (the
+ * browser tab) up. Shared by LogoMark, the preloader (which draws it line by line) and
+ * app/icon.svg — keep them in sync.
+ */
+export const IDX_MARK = {
+  dot: { cx: 5.75, cy: 6.75, r: 2.75 },
+  stem: "M3 14.25a2.75 2.75 0 0 1 5.5 0v11a2.75 2.75 0 0 1-5.5 0Z",
+  d: "M11.75 4H17.5a12 12 0 0 1 0 24H11.75a1.25 1.25 0 0 1-1.25-1.25V5.25A1.25 1.25 0 0 1 11.75 4Z",
+  counter: "M14.75 8.25H17.5a7.75 7.75 0 0 1 0 15.5H14.75Z",
+  x: "M17 12.8l5.2 6.4M22.2 12.8l-5.2 6.4",
+  /** Light catching the top of the «D», like the polished metal of the original. */
+  gloss: "M12 5.4H17.5c3.4 0 6.5 1.3 8.7 3.4-4.4-1.4-9.6-1.4-14.2.3Z",
+} as const;
+
+/** Gradients of the mark; `id` prefixes keep the logo and the preloader's copy apart. */
+function MarkDefs({ id }: { id: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden {...props}>
-      <defs>
-        <linearGradient id="lm-bg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#2b2380" />
-          <stop offset="1" stopColor="#0c0930" />
-        </linearGradient>
-        <linearGradient id="lm-fg" x1="8" y1="12" x2="32" y2="28" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#ffffff" />
-          <stop offset=".55" stopColor="#b3a8ff" />
-          <stop offset="1" stopColor="#e9a8ff" />
-        </linearGradient>
-      </defs>
-      <rect x="1" y="1" width="38" height="38" rx="11" fill="url(#lm-bg)" />
-      <rect x="1.5" y="1.5" width="37" height="37" rx="10.5" stroke="#b5aaff" strokeOpacity=".45" />
-      {/* «IDX» in round strokes, white → violet → pink like the site's gradient text (same as app/icon.svg) */}
+    <defs>
+      <linearGradient id={`${id}-gold`} x1="0" y1="0" x2="1" y2="1">
+        <stop stopColor="#fff6dc" />
+        <stop offset=".25" stopColor="#f2d699" />
+        <stop offset=".52" stopColor="#d2a45c" />
+        <stop offset=".8" stopColor="#9c6d2e" />
+        <stop offset="1" stopColor="#e9c57f" />
+      </linearGradient>
+      <linearGradient id={`${id}-x`} x1="17" y1="12.8" x2="22.2" y2="19.2" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#fff6dc" />
+        <stop offset=".5" stopColor="#e5bd72" />
+        <stop offset="1" stopColor="#a8783a" />
+      </linearGradient>
+    </defs>
+  );
+}
+
+/** The logo (header, footer, sign-in card). Decorative: the link around it carries the name. */
+export function LogoMark({ size = 32, className, ...props }: IconProps) {
+  const id = "idx-logo";
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden className={cn("shrink-0", className)} {...props}>
+      <MarkDefs id={id} />
+      <g fill={`url(#${id}-gold)`}>
+        <circle {...IDX_MARK.dot} />
+        <path d={IDX_MARK.stem} />
+        <path d={IDX_MARK.d} />
+      </g>
+      <path d={IDX_MARK.gloss} fill="#fff" fillOpacity=".28" />
+      <path d={IDX_MARK.counter} fill="#08090b" />
+      <path d={IDX_MARK.x} stroke={`url(#${id}-x)`} strokeWidth="2.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/**
+ * The mark for the preloader: its gold outlines draw themselves (pathLength = 1 for the dash
+ * animation), then the gold and the black fill in under them and the outlines melt into the fill;
+ * the «X» is a line itself and stays (styles/components.css → .preloader-*).
+ */
+export function LogoMarkDrawn({ size = 88 }: { size?: number }) {
+  const id = "idx-pl";
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden className="relative block">
+      <MarkDefs id={id} />
+      <g className="preloader-plate">
+        <g fill={`url(#${id}-gold)`}>
+          <circle {...IDX_MARK.dot} />
+          <path d={IDX_MARK.stem} />
+          <path d={IDX_MARK.d} />
+        </g>
+        <path d={IDX_MARK.gloss} fill="#fff" fillOpacity=".28" />
+        <path d={IDX_MARK.counter} fill="#08090b" />
+      </g>
+      <path d={IDX_MARK.d} stroke={`url(#${id}-gold)`} strokeWidth="0.7" pathLength={1} className="preloader-stroke" />
+      <path d={IDX_MARK.stem} stroke={`url(#${id}-gold)`} strokeWidth="0.7" pathLength={1} className="preloader-stroke" />
+      <circle {...IDX_MARK.dot} stroke={`url(#${id}-gold)`} strokeWidth="0.7" pathLength={1} className="preloader-stroke" />
+      <path d={IDX_MARK.counter} stroke={`url(#${id}-gold)`} strokeWidth="0.5" pathLength={1} className="preloader-stroke preloader-stroke-late" />
       <path
-        d="M8.5 13v14M13 13v14h1.4a6.4 7 0 0 0 0-14ZM24.2 13l7.3 14M31.5 13l-7.3 14"
-        stroke="url(#lm-fg)"
-        strokeWidth="2.7"
+        d={IDX_MARK.x}
+        stroke={`url(#${id}-x)`}
+        strokeWidth="2.3"
         strokeLinecap="round"
-        strokeLinejoin="round"
+        pathLength={1}
+        className="preloader-stroke preloader-stroke-late preloader-stroke-keep"
       />
     </svg>
   );

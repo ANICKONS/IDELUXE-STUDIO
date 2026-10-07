@@ -5,7 +5,7 @@ export const site = {
   description:
     "Платформа монтажёра IDELUXE: туториалы с разбором эффектов (VFX, SFX, Motion) в After Effects, Premiere Pro и Vegas Pro, IDX PACK с футажами, пресетами и звуками и ИИ-ассистент по монтажу.",
   locale: "ru_RU",
-  themeColor: "#04030d",
+  themeColor: "#060709",
   telegram: {
     bot: { handle: "@de_1uxe_bot", url: "https://t.me/de_1uxe_bot" },
     channel: { handle: "@de_1uxeee", url: "https://t.me/de_1uxeee" },

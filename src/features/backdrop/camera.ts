@@ -123,7 +123,8 @@ export function planFlight(from: Pose, to: Shot, w: number, h: number, now: numb
     from,
     to,
     start: now,
-    duration: intro ? 3000 : to === "above" ? 2300 : 2400 + across * 500,
+    // ms; the page's entrance and the exit before it are timed off these (SpaceScene, PageTransitions)
+    duration: intro ? 2800 : to === "above" ? 2000 : 2050 + across * 480,
     dip: across * h * 0.45,
     pull: across * 0.16,
     dust: intro ? 0.25 : to === "above" ? 0.25 : 0.3 + across * 0.5,

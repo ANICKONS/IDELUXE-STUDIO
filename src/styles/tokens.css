@@ -1,27 +1,52 @@
 /* ───────────────────────── Design tokens ─────────────────────────
    Palette, fonts and animation shortcuts. Every Tailwind utility (bg-ink-950, text-accent-soft,
-   font-display, animate-levitate…) is generated from these variables: change them here to rebrand. */
+   font-display, animate-levitate…) is generated from these variables: change them here to rebrand.
+
+   Palette «Eclipse»: cool graphite black, warm ivory text and one restrained accent — champagne.
+   Colour comes mostly from the "photographic" backdrop (blue atmosphere, golden sunrise behind the
+   planet), the interface itself stays nearly monochrome. Primary buttons are ivory, not coloured. */
+
+/* `short:` — desktop screens up to 1200 px tall (laptops, 1080p / 1200p monitors): the hero squeezes the
+   editor window to fit the first screen (hero-section.tsx, editor-mock.tsx) */
+@custom-variant short (@media (min-width: 64rem) and (max-height: 75rem));
+
+/* The same colours as space-separated RGB channels, for translucent shades in hand-written CSS and
+   arbitrary Tailwind values: rgb(var(--rgb-accent) / 0.3). Keep them in sync with @theme below. */
+:root {
+  --rgb-ink: 6 7 9;
+  --rgb-fg: 243 240 234;
+  --rgb-accent: 214 181 131;
+  --rgb-accent-strong: 184 146 90;
+  --rgb-accent-soft: 237 220 189;
+  /* Cool light of the atmosphere: rims, the far side of gradients */
+  --rgb-frost: 168 192 222;
+}
+
 @theme {
-  --color-ink-950: #04030d;
-  --color-ink-900: #080619;
-  --color-ink-850: #0c0a24;
-  --color-ink-800: #110e30;
-  --color-ink-700: #1a1646;
-  --color-ink-600: #262062;
+  --color-ink-950: #060709;
+  --color-ink-900: #0a0b0e;
+  --color-ink-850: #0f1013;
+  --color-ink-800: #15161a;
+  --color-ink-700: #1e2025;
+  --color-ink-600: #2b2e35;
 
-  --color-accent: #8f80ff;
-  --color-accent-strong: #6b5bff;
-  --color-accent-soft: #c9c2ff;
-  --color-pink: #e9a8ff;
-  --color-teal: #6ee7d8;
-  --color-amber: #ffc978;
-  --color-sky: #8ec5ff;
-  /* Contrast highlight for key links («Тарифы», stickers). */
-  --color-neon: #7cf8d0;
+  /* Champagne: icons, active states, focus, small highlights. Use sparingly. */
+  --color-accent: #d6b583;
+  --color-accent-strong: #b8925a;
+  --color-accent-soft: #eddcbd;
+  /* Cool counterpart (the atmosphere's blue), for rare cold accents */
+  --color-frost: #a8c0de;
+  /* Muted label colours (editor timeline clips) and states */
+  --color-rose: #d4948a;
+  --color-teal: #8fb9ae;
+  --color-amber: #e2b46e;
+  --color-sky: #93b2d4;
+  /* Soft warm light for key words and the «Тарифы» link (.text-glow) */
+  --color-glow: #f2dfb6;
 
-  --color-fg: #eeecff;
-  --color-muted: #aaa7d1;
-  --color-dim: #6e6b99;
+  --color-fg: #f3f0ea;
+  --color-muted: #a8a49c;
+  --color-dim: #6f6c66;
 
   /* Font variables are set by next/font in src/app/fonts.ts */
   --font-display: var(--font-unbounded), ui-sans-serif, system-ui, sans-serif;
@@ -33,13 +58,12 @@
   /* Keyframes live in animations.css */
   --animate-float: float 7s ease-in-out infinite;
   --animate-marquee: marquee 40s linear infinite;
-  --animate-pulse-ring: pulse-ring 2.4s ease-out infinite;
+  --animate-ping-soft: ping-soft 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
   --animate-shimmer: shimmer 2.2s linear infinite;
   --animate-fade-up: fade-up 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-reel-float: reel-float 9s ease-in-out infinite;
   --animate-window-float: window-float 7s ease-in-out infinite;
   --animate-fade-in: fade-in 0.45s ease-out both;
-  --animate-rise-in: rise-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
   --animate-levitate: levitate 8s ease-in-out infinite;
   --animate-sway: sway 13s ease-in-out infinite;
   /* Hero editor platform */

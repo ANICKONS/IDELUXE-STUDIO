@@ -1,9 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import {
-  homeRadius,
   planFlight,
   restingFrame,
   sampleFlight,
@@ -16,6 +15,8 @@ import {
 import { createPlanet, drawPlanetFallback } from "@/features/backdrop/planet";
 import { createStarfield } from "@/features/backdrop/starfield";
 import { markBackdropReady, readBootPhase, subscribeBoot } from "@/lib/boot";
+import { subscribeLeave } from "@/lib/page-leave";
+import { holdArrival } from "@/lib/transit-hold";
 import { readVideoHold, subscribeVideoHold } from "@/lib/video-hold";
 
 /*
@@ -38,6 +39,28 @@ const SPIN_RESPONSE = 6;
 const CLOUD_LEAD = 1.12;
 /** Scroll movement ignored after a page switch (Next jumps to the top of the new page), ms. */
 const SCROLL_SETTLE = 500;
+/** Share of a flight when the new page's blocks start coming in, and when they've landed. */
+const ARRIVE_START = 0.28;
+const ARRIVE_END = 0.9;
+/** Shortest entrance, ms (a late page still eases in instead of popping). */
+const ARRIVE_MIN = 500;
+/**
+ * After the entrance, ms: the stagger of the first blocks (`--i` × 80 ms, the hero editor is 3rd).
+ * Then the new page's videos and loops start (lib/transit-hold.ts).
+ */
+const ARRIVE_TAIL = 240;
+/**
+ * Frame pacing. While something moves (flight, scroll, pointer) the backdrop renders at no less
+ * than ~60 fps, at rest (twinkle, slow spin) at ~30 fps — indistinguishable, and half the GPU work,
+ * including every glass panel re-blurring the backdrop behind it. Counted in display refreshes,
+ * not milliseconds, so the steps stay even: on 144 Hz every 2nd refresh in motion (72 fps; a
+ * millisecond budget landed on every 3rd — 48 fps, visibly choppier than the page's own 144 fps
+ * animations), every 5th at rest; on 60 Hz every refresh / every 2nd.
+ */
+const BUSY_FPS = 60;
+const IDLE_FPS = 30;
+/** Refreshes per rendered frame for a target rate (a little slack for a slightly fast display). */
+const pace = (refresh: number, fps: number) => Math.max(1, Math.floor(refresh / fps + 0.2));
 
 export function SpaceScene() {
   const skyRef = useRef<HTMLCanvasElement>(null);
@@ -87,25 +110,62 @@ export function SpaceScene() {
       return restingFrame(shotPose(shot, w, h));
     };
 
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    /** Reallocates both canvases; false when nothing worth it changed. */
     const resize = () => {
-      w = window.innerWidth;
-      h = window.innerHeight;
+      const nw = window.innerWidth;
+      const nh = window.innerHeight;
+      // Phones: the URL bar showing/hiding changes the height while scrolling — the canvases
+      // simply stretch a little instead of being reallocated mid-scroll
+      if (nw === w && (nh === h || (coarse && Math.abs(nh - h) < 160))) return false;
+      w = nw;
+      h = nh;
       dpr = Math.min(window.devicePixelRatio || 1, w < 768 ? 1 : 1.5);
       sky.width = Math.round(w * dpr);
       sky.height = Math.round(h * dpr);
       stars.resize(w, h);
       planet?.resize(w, h);
+      return true;
     };
 
     let frame = 0;
     let last = 0;
     let running = false;
+    let flying = false;
+    // Display refresh rate, Hz: estimated from the gaps between animation frames (smoothed,
+    // ignoring stalls); `skipped` counts refreshes since the last rendered frame
+    let refresh = 60;
+    let lastCall = 0;
+    let skipped = 0;
 
     /** `still`: a single frame (reduced motion, paused) — the planet bakes its map in one go. */
     const render = (now: number, still = false) => {
+      // Pacing (see BUSY_FPS / IDLE_FPS): render on every n-th display refresh
+      if (!still) {
+        const gap = lastCall ? now - lastCall : 0;
+        lastCall = now;
+        if (gap > 2 && gap < 40) refresh += (1000 / gap - refresh) * 0.05;
+        if (last) {
+          const moving =
+            flight !== null || Math.abs(omega - IDLE_SPIN) > 0.003 || Math.abs(mouseTarget - mouseX) > 0.002 || Math.abs(scrollTarget - scrollSmooth) > 0.5;
+          // A late refresh counts for as many as it took
+          skipped += gap > 0 ? Math.max(1, Math.round((gap * refresh) / 1000)) : 1;
+          if (skipped < pace(refresh, moving ? BUSY_FPS : IDLE_FPS)) {
+            if (running) frame = requestAnimationFrame(render);
+            return;
+          }
+        }
+        skipped = 0;
+      }
       const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
       last = now;
       const time = now / 1000;
+      // html[data-flying]: other heavy work (the editor's scopes) takes a break during a flight
+      if ((flight !== null) !== flying) {
+        flying = flight !== null;
+        if (flying) document.documentElement.setAttribute("data-flying", "");
+        else document.documentElement.removeAttribute("data-flying");
+      }
 
       // Scroll → spin. The signed scroll speed sets the target spin: down = faster in the idle
       // direction, up = backwards at the same speed; the spin eases towards it (inertia)
@@ -135,7 +195,6 @@ export function SpaceScene() {
         clouds: spin * CLOUD_LEAD + time * 0.002,
         yaw: pose.yaw,
         pitch: pose.pitch,
-        cityCells: homeRadius(w) / 4.5,
       };
       if (!planet) {
         drawPlanetFallback(ctx, view);
@@ -149,6 +208,8 @@ export function SpaceScene() {
       if (running || reduced || readVideoHold()) return;
       running = true;
       last = 0;
+      lastCall = 0;
+      skipped = 0;
       frame = requestAnimationFrame(render);
     };
     const stop = () => {
@@ -156,7 +217,42 @@ export function SpaceScene() {
       cancelAnimationFrame(frame);
     };
 
-    /** A page switch: fly to its shot (or just show it when nothing animates). */
+    /**
+     * Times the new page's entrance (`.arrive`, styles/components.css) to the flight: its blocks
+     * start coming in once the camera is under way and land as it settles, drifting the same way
+     * as the sky. Called when the new page mounts — the flight may have started earlier, on the
+     * click (PageTransitions). No flight → the defaults (they come in at once).
+     * The timing goes into its own tiny stylesheet aimed at the entering blocks only (and the
+     * properties don't inherit, styles/animations.css): setting or dropping it restyles those few
+     * elements, not the whole page — on <html> it was a hitch right as the page landed.
+     */
+    const timing = document.createElement("style");
+    timing.dataset.arriveTiming = "";
+    document.head.append(timing);
+    let arriveTimer = 0;
+    const clearArrive = () => {
+      if (timing.textContent) timing.textContent = "";
+    };
+    const timeArrival = (f: Flight | null) => {
+      window.clearTimeout(arriveTimer);
+      const now = performance.now();
+      if (!f || now > f.start + f.duration * ARRIVE_END) {
+        holdArrival(0);
+        return clearArrive();
+      }
+      const delay = Math.max(0, f.start + f.duration * ARRIVE_START - now);
+      const duration = Math.max(ARRIVE_MIN, f.start + f.duration * ARRIVE_END - now - delay);
+      // Heavy page work (hero editor, videos) waits until the blocks have landed
+      holdArrival(delay + duration + ARRIVE_TAIL);
+      const to = shotPose(f.to, w, h);
+      const x = -Math.sign(Math.round(to.panX - f.from.panX)) * 48;
+      const y = -Math.sign(Math.round(to.panY - f.from.panY)) * 32;
+      timing.textContent = `.arrive,.decor-in{--arrive-delay:${Math.round(delay)}ms;--arrive-duration:${Math.round(duration)}ms;--arrive-x:${x}px;--arrive-y:${y}px}`;
+      // Once everything has landed, later entrances on the page are immediate again
+      arriveTimer = window.setTimeout(clearArrive, delay + duration + 900);
+    };
+
+    /** Fly to a shot (or just show it when nothing animates). */
     const go = (next: Shot) => {
       const now = performance.now();
       // Any page switch: the jump to the top of the new page must not spin the planet
@@ -172,7 +268,13 @@ export function SpaceScene() {
       }
       flight = planFlight(from, next, w, h, now);
     };
-    goRef.current = go;
+    /** The new page is in the DOM: make sure the camera heads there, time its entrance. */
+    goRef.current = (next: Shot) => {
+      go(next);
+      timeArrival(flight && flight.to === next ? flight : null);
+    };
+    // A link was clicked: start flying while the old page is still easing away
+    const unsubscribeLeave = subscribeLeave((path) => go(shotFor(path)));
 
     const onBoot = () => {
       if (!introPending || readBootPhase() === "loading") return;
@@ -187,9 +289,12 @@ export function SpaceScene() {
     const onPointer = (e: PointerEvent) => {
       mouseTarget = (e.clientX / Math.max(1, w)) * 2 - 1;
     };
+    let resizeFrame = 0;
     const onResize = () => {
-      resize();
-      if (!running) render(performance.now(), true);
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => {
+        if (resize() && !running) render(performance.now(), true);
+      });
     };
     const onHold = () => (readVideoHold() ? stop() : start());
 
@@ -208,7 +313,13 @@ export function SpaceScene() {
 
     return () => {
       stop();
+      cancelAnimationFrame(resizeFrame);
+      document.documentElement.removeAttribute("data-flying");
+      window.clearTimeout(arriveTimer);
+      timing.remove();
+      holdArrival(0);
       goRef.current = null;
+      unsubscribeLeave();
       unsubscribeHold();
       unsubscribeBoot();
       planet?.dispose();
@@ -218,8 +329,9 @@ export function SpaceScene() {
     };
   }, []);
 
-  // Page switches move the camera
-  useEffect(() => {
+  // Page switches move the camera. A layout effect: the new page is already in the DOM but not yet
+  // painted, so its entrance gets the flight's timing from its very first frame
+  useLayoutEffect(() => {
     const next = shotFor(pathname);
     initialShot.current = next;
     goRef.current?.(next);

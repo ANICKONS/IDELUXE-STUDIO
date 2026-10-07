@@ -4,9 +4,8 @@ import { useCallback } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Pre-rendered three.js objects in /public/decor (transparent WebP). play, keyframe, sparkle, lens
- * and wave come from tools/decor-render (scene, studio light, render script); knot, cube and
- * asterisk are the original renders from v4 (README → «3D-декор»).
+ * Pre-rendered three.js objects in /public/decor (transparent WebP), all made by tools/decor-render
+ * (scene, studio light, render script; README → «3D-декор»): black chrome, champagne gold, ivory.
  */
 export type DecorName = "play" | "keyframe" | "sparkle" | "lens" | "wave" | "knot" | "cube" | "asterisk";
 
@@ -14,7 +13,7 @@ export type DecorName = "play" | "keyframe" | "sparkle" | "lens" | "wave" | "kno
  * Bump after re-rendering: /decor is cached by browsers for a week (next.config.ts), and the
  * file names stay the same.
  */
-const DECOR_VERSION = 2;
+const DECOR_VERSION = 3;
 
 const INTRINSIC: Record<DecorName, [number, number]> = {
   play: [683, 720],
@@ -22,9 +21,9 @@ const INTRINSIC: Record<DecorName, [number, number]> = {
   sparkle: [667, 720],
   lens: [720, 712],
   wave: [720, 605],
-  knot: [617, 632],
-  cube: [618, 661],
-  asterisk: [671, 727],
+  knot: [707, 720],
+  cube: [695, 720],
+  asterisk: [638, 720],
 };
 
 /*
@@ -79,21 +78,25 @@ function focusBlur(depth: number) {
 
 /* ── One scroll listener for every object on the page ── */
 const nodes = new Set<HTMLElement>();
+/** Objects on screen and their current parallax shift (set on scroll); the magnet reads it. */
+const centres = new WeakMap<HTMLElement, { shift: number }>();
 let frame = 0;
 let listening = false;
 
 function update() {
   frame = 0;
   const vh = window.innerHeight;
-  for (const anchor of nodes) {
+  // Read every rect first, then write: interleaving would force a layout per object
+  const reads = [...nodes].map((anchor) => [anchor, anchor.getBoundingClientRect()] as const);
+  for (const [anchor, r] of reads) {
     const mover = anchor.firstElementChild as HTMLElement | null;
     if (!mover) continue;
-    // The anchor is never transformed, so its rect is the true layout position.
-    const r = anchor.getBoundingClientRect();
     // -1: leaving through the top, 0: centre of the screen, 1: entering from the bottom.
+    // (The anchor is never transformed, so its rect is the true layout position.)
     const p = (r.top + r.height / 2 - vh / 2) / (vh / 2 + r.height / 2);
     if (p < -1.5 || p > 1.5) {
       if (mover.style.opacity !== "0") mover.style.opacity = "0";
+      centres.delete(anchor);
       continue;
     }
     const depth = Number(anchor.dataset.depth);
@@ -111,6 +114,7 @@ function update() {
     const filter = blur > 0.3 ? `blur(${blur}px)` : "none";
     if (mover.style.filter !== filter) mover.style.filter = filter;
     mover.style.opacity = (alpha * (1 - leaving) * (1 - entering * 0.7)).toFixed(3);
+    centres.set(anchor, { shift });
   }
 }
 
@@ -118,13 +122,84 @@ const schedule = () => {
   if (!frame) frame = requestAnimationFrame(update);
 };
 
+/*
+ * Magnet (an easter egg): when the cursor passes close by, an object leans towards it — a little,
+ * it stays roughly in place — and once the cursor moves away it lets go and springs back with a
+ * small overshoot, as if it came unstuck. Fine pointers only, never with reduced motion.
+ */
+/** How far beyond its own radius an object feels the cursor, px; and the most it moves, px. */
+const MAGNET_REACH = 90;
+const MAGNET_MAX = 22;
+/** Spring: stiffness and damping (underdamped → a soft wobble on release). */
+const SPRING_K = 140;
+const SPRING_D = 13;
+
+type Pull = { x: number; y: number; vx: number; vy: number };
+const pulls = new WeakMap<HTMLElement, Pull>();
+let pointerX = -1e5;
+let pointerY = -1e5;
+let magnetFrame = 0;
+let magnetLast = 0;
+let magnetOn = false;
+
+function magnetTick(now: number) {
+  magnetFrame = 0;
+  const dt = magnetLast ? Math.min(0.033, (now - magnetLast) / 1000) : 1 / 60;
+  magnetLast = now;
+  let busy = false;
+  // Fresh positions every tick (the layout can shift after fonts load), all reads before writes
+  const reads = [...nodes].map((anchor) => {
+    const r = anchor.getBoundingClientRect();
+    const c = centres.get(anchor);
+    return { anchor, el: anchor.querySelector<HTMLElement>("[data-magnet]"), c: c && { x: r.left + r.width / 2, y: r.top + r.height / 2 + c.shift, r: r.width / 2 } };
+  });
+  for (const { el, c } of reads) {
+    if (!el) continue;
+    const s = pulls.get(el) ?? { x: 0, y: 0, vx: 0, vy: 0 };
+    let tx = 0;
+    let ty = 0;
+    if (c) {
+      const dx = pointerX - (c.x + s.x);
+      const dy = pointerY - (c.y + s.y);
+      const d = Math.hypot(dx, dy);
+      // Stretches towards the cursor the further it pulls, until the cursor gets out of reach
+      if (d > 1 && d < c.r + MAGNET_REACH) {
+        const pull = Math.min(MAGNET_MAX, d * 0.22);
+        tx = (dx / d) * pull;
+        ty = (dy / d) * pull;
+      }
+    }
+    s.vx += ((tx - s.x) * SPRING_K - s.vx * SPRING_D) * dt;
+    s.vy += ((ty - s.y) * SPRING_K - s.vy * SPRING_D) * dt;
+    s.x += s.vx * dt;
+    s.y += s.vy * dt;
+    // Keep ticking until it has settled (at the pull, or back home)
+    if (Math.abs(tx - s.x) + Math.abs(ty - s.y) + Math.abs(s.vx) + Math.abs(s.vy) > 0.05) busy = true;
+    else if (!tx && !ty) s.x = s.y = s.vx = s.vy = 0;
+    pulls.set(el, s);
+    el.style.translate = `${s.x.toFixed(2)}px ${s.y.toFixed(2)}px`;
+    el.style.rotate = `${(s.x * 0.18).toFixed(2)}deg`;
+  }
+  if (busy) magnetFrame = requestAnimationFrame(magnetTick);
+  else magnetLast = 0;
+}
+
+const onPointerMove = (e: PointerEvent) => {
+  pointerX = e.clientX;
+  pointerY = e.clientY;
+  if (!magnetFrame) magnetFrame = requestAnimationFrame(magnetTick);
+};
+
 function register(el: HTMLElement) {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return () => {};
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduced) return () => {};
   nodes.add(el);
   if (!listening) {
     listening = true;
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
+    magnetOn = window.matchMedia("(pointer: fine)").matches;
+    if (magnetOn) window.addEventListener("pointermove", onPointerMove, { passive: true });
   }
   schedule();
   return () => {
@@ -133,13 +208,18 @@ function register(el: HTMLElement) {
       listening = false;
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
+      if (magnetOn) window.removeEventListener("pointermove", onPointerMove);
+      cancelAnimationFrame(magnetFrame);
+      magnetFrame = 0;
+      magnetLast = 0;
     }
   };
 }
 
 /**
- * Decorative 3D objects hovering along the sides. Each one bobs gently (CSS), moves with
- * depth-based parallax on scroll and gets depth-of-field blur and atmospheric dimming.
+ * Decorative 3D objects hovering along the sides. They come in one after another with the page
+ * (`.decor-in`), bob gently (CSS), move with depth-based parallax on scroll, get depth-of-field
+ * blur and atmospheric dimming, and lean towards a cursor passing close by (magnet).
  * Background objects sit behind the content (`className`, e.g. -z-10), foreground ones in a
  * second layer above it. Put it inside a positioned container; it never takes pointer events.
  */
@@ -221,9 +301,12 @@ function DecorObject({
       }
     >
       <div
-        className="will-change-[transform,filter,opacity]"
+        className={blur > 0.3 ? "will-change-[transform,filter,opacity]" : "will-change-[transform,opacity]"}
         style={{ filter: blur > 0.3 ? `blur(${blur.toFixed(1)}px)` : undefined, opacity: alpha }}
       >
+        {/* data-magnet: leans towards a nearby cursor (`translate`/`rotate`, set by magnetTick);
+            decor-in: comes in one by one with the page (`transform`/`opacity`) */}
+        <div data-magnet className="decor-in" style={{ "--i": i } as React.CSSProperties}>
         {/* Two loops with unrelated periods (bob + sideways sway) so the motion never looks in sync */}
         <div
           className="animate-sway"
@@ -260,6 +343,7 @@ function DecorObject({
               style={{ filter: grade }}
             />
           </div>
+        </div>
         </div>
       </div>
     </div>

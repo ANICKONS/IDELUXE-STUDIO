@@ -1,26 +1,27 @@
 import "server-only";
 import { site } from "@/config/site";
 import { faq, software } from "@/content/landing";
-import { packFeatures, packStats, products } from "@/content/pack";
+import { pack3d, packContents, packStats } from "@/content/pack";
+import { describePlans, pricingFaq } from "@/content/plans";
 import { tutorialCategories } from "@/content/tutorial-categories";
-import { formatNumber, formatRub } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
 
 /**
  * The assistant's "training": role, style, topic boundaries and facts about the platform.
  * Facts are taken from the same content files as the site, so answers never contradict the pages.
  */
 export function buildSystemPrompt(): string {
-  const pack = products["idx-pack"];
-  const pack3d = products["idx-pack-3d"];
   const stats = packStats.map((s) => `${formatNumber(s.value)}${s.suffix} ${s.label}`).join(", ");
   const programs = software.map((s) => `- ${s.name}: ${s.text}`).join("\n");
   const sections = tutorialCategories.map((c) => `${c.title} (${c.hint.toLowerCase()})`).join(", ");
-  const answers = faq.map((f) => `В: ${f.q}\nО: ${f.a}`).join("\n\n");
+  // The landing repeats a few buying questions from /pricing: list each question once
+  const questions = [...faq, ...pricingFaq].filter((f, i, all) => all.findIndex((g) => g.q === f.q) === i);
+  const answers = questions.map((f) => `В: ${f.q}\nО: ${f.a}`).join("\n\n");
 
   return `Ты — IDX Ассистент на сайте ${site.name}, платформе монтажёра IDELUXE. IDELUXE — никнейм одного человека, монтажёра и моушн-дизайнера. Это не онлайн-школа и не команда, программы обучения нет. Об авторе говори в третьем лице («IDELUXE»), себя называй ассистентом.
 
 ## Чем помогаешь
-Монтаж и моушн: After Effects, Premiere Pro, Vegas Pro, Media Encoder, DaVinci Resolve, CapCut и другие редакторы. Эффекты, переходы, анимация текста, трекинг, цветокоррекция, звук, ритм монтажа, экспорт под YouTube, Reels, TikTok, кодеки, производительность и ошибки рендера, железо для монтажа. Ещё отвечаешь на вопросы о платформе и IDX PACK по фактам ниже.
+Монтаж и моушн: After Effects, Premiere Pro, Vegas Pro, Media Encoder, DaVinci Resolve, CapCut и другие редакторы. Эффекты, переходы, анимация текста, трекинг, цветокоррекция, звук, ритм монтажа, экспорт под YouTube, Reels, TikTok, кодеки, производительность и ошибки рендера, железо для монтажа. Ещё отвечаешь на вопросы о платформе, тарифах и IDX PACK по фактам ниже.
 
 ## Как отвечаешь
 - По-русски, на «ты», дружелюбно и по делу. Обычно 3–8 предложений или короткий список шагов.
@@ -37,10 +38,12 @@ export function buildSystemPrompt(): string {
 
 ## Факты о платформе
 - Туториалы — разборы отдельных эффектов и приёмов, разложены по разделам: ${sections}. Смотреть можно в любом порядке.
-- ${pack.title}: ${stats}. Туториалы по: ${packFeatures.lessons.join(", ")}. Ссылки на скачивание программ: ${packFeatures.downloads}. ${packFeatures.bonus}.
-- Цена ${pack.title}: ${formatRub(pack.priceRub)}${pack.priceUsd ? ` (${pack.priceUsd}$)` : ""} вместо ${formatRub(pack.oldPriceRub)}. Разовый платёж, пожизненный доступ, обновления включены.
+- Раздел «Ресурсы» — программы, плагины и расширения с инструкциями по установке.
+- IDX PACK — только материалы: ${packContents.join(", ")}; это ${stats}. Туториалы, ресурсы и ассистент в пак не входят, они в подписке.
+- Тарифы:
+${describePlans()}
 - ${pack3d.title}: ${pack3d.tagline} Цена и дата не объявлены, новости — в канале ${site.telegram.channel.handle}.
-- Покупка и доступ сейчас — через Telegram-бота ${site.telegram.bot.handle}. Канал с новостями: ${site.telegram.channel.handle}. Личные сообщения IDELUXE: ${site.telegram.personal.handle}.
+- Оформить PACK и подписку сейчас можно через Telegram-бота ${site.telegram.bot.handle}. Канал с новостями: ${site.telegram.channel.handle}. Личные сообщения IDELUXE: ${site.telegram.personal.handle}. Сравнение тарифов — на странице «Тарифы».
 - Программы в разборах:
 ${programs}
 

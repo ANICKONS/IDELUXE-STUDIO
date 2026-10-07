@@ -25,6 +25,8 @@ import { packStats } from "@/content/pack";
 import { HERO_REEL_ORIGIN } from "@/features/reel/origins";
 import { formatClock, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { readTransitHold } from "@/lib/transit-hold";
+import { readVideoHold } from "@/lib/video-hold";
 import {
   LOOP,
   SEQ_DURATION,
@@ -51,19 +53,26 @@ const workspaces = ["Сборка", "Монтаж", "Цвет", "Эффекты"
 const binIcons = [Film, Sparkles, FolderOpen, AudioLines];
 
 const kindTone: Record<ClipKind, string> = {
-  footage: "border-accent/60 bg-accent-strong/35",
-  comp: "border-pink/60 bg-pink/25",
+  footage: "border-accent/45 bg-accent-strong/25",
+  comp: "border-rose/60 bg-rose/25",
   flash: "border-amber/70 bg-amber/35",
   "3d": "border-teal/60 bg-teal/25",
   transition: "border-sky/60 bg-sky/25",
 };
 const kindDot: Record<ClipKind, string> = {
   footage: "bg-accent",
-  comp: "bg-pink",
+  comp: "bg-rose",
   flash: "bg-amber",
   "3d": "bg-teal",
   transition: "bg-sky",
 };
+
+/**
+ * Short desktop screens (`short:`): the side panels take the monitor's height and clip whatever
+ * doesn't fit (lower rows of the effect controls, the info list) — so the window is only as tall
+ * as its program monitor and the whole hero fits the first screen.
+ */
+const SHORT_PANEL = "short:relative short:overflow-hidden short:[contain:size] short:[mask-image:linear-gradient(to_bottom,#000_82%,transparent)]";
 
 /** Ruler marks in sequence time (the teaser covers 27.3–43.3 s of the showreel). */
 const rulerSeconds = Array.from({ length: 16 }, (_, i) => 28 + i).filter((s) => s < SEQ_OFFSET + LOOP);
@@ -73,7 +82,8 @@ const rulerSeconds = Array.from({ length: 16 }, (_, i) => 28 + i).filter((s) => 
  * is driven by video.currentTime — playhead, timecode, the clip under the playhead (real cuts),
  * its effect parameters with keyframes, a live luma waveform and audio meters.
  */
-export function EditorMock() {
+/** `className` goes on the glass window itself (e.g. its entrance: `arrive` must sit on the glass). */
+export function EditorMock({ className }: { className?: string }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const fxRef = useRef<HTMLDivElement>(null);
   const lanesRef = useRef<HTMLDivElement>(null);
@@ -82,6 +92,8 @@ export function EditorMock() {
   const meterRRef = useRef<HTMLSpanElement>(null);
   const timecodeRef = useRef<HTMLSpanElement>(null);
   const renderPctRef = useRef<HTMLSpanElement>(null);
+  const playheadRef = useRef<HTMLDivElement>(null);
+  const exportBarRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const [userPaused, setUserPaused] = useState(false);
@@ -121,15 +133,37 @@ export function EditorMock() {
     let level = 0;
     let lastClip = -1;
     let lastLayer = -2;
+    let lastT = -1;
+    let lastCode = "";
+    let lastPct = "";
     let raf = 0;
+    let lastTick = 0;
+    const html = document.documentElement;
 
-    const tick = () => {
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      // Hidden behind the open reel player, or a page switch is under way (the video is paused
+      // too, lib/transit-hold.ts): nothing to update, the frames go to the camera flight
+      if (readVideoHold() || readTransitHold()) return;
+      // ~50–60 updates a second are plenty for a playhead and some readouts (the video itself
+      // plays at 24–30 fps); on 120/144 Hz screens this halves the work
+      if (now - lastTick < 1000 / 60 - 2) return;
+      lastTick = now;
       const v = videoRef.current;
       const t = v && v.readyState >= 1 ? v.currentTime : 0;
+      const playing = Boolean(v && !v.paused && v.readyState >= 2);
+      // Paused and already drawn: only the meters may still be settling
+      if (t === lastT && !playing && level < 0.005) return;
+      lastT = t;
       const d = v && Number.isFinite(v.duration) && v.duration > 0 ? v.duration : LOOP;
-      rootRef.current?.style.setProperty("--t", String(clamp01(t / d)));
-      if (timecodeRef.current) timecodeRef.current.textContent = timecode(SEQ_OFFSET + t);
-      if (renderPctRef.current) renderPctRef.current.textContent = `${Math.floor(clamp01(t / d) * 100)} %`;
+      const k = clamp01(t / d);
+      // Playheads move by transform (no layout); text is only rewritten when it changes
+      if (playheadRef.current) playheadRef.current.style.transform = `translateX(${(k * 100).toFixed(3)}%)`;
+      if (exportBarRef.current) exportBarRef.current.style.transform = `scaleX(${k.toFixed(4)})`;
+      const code = timecode(SEQ_OFFSET + t);
+      if (code !== lastCode && timecodeRef.current) timecodeRef.current.textContent = lastCode = code;
+      const pct = `${Math.floor(k * 100)} %`;
+      if (pct !== lastPct && renderPctRef.current) renderPctRef.current.textContent = lastPct = pct;
 
       const ci = Math.max(0, indexAt(clips, t));
       const li = indexAt(fxLayers, t);
@@ -152,13 +186,15 @@ export function EditorMock() {
         const current = rowsRef.current;
         els.forEach((el, i) => {
           const row = current[i];
-          if (row) el.textContent = row.value(row.layer ? lp : p, t);
+          if (!row) return;
+          const text = row.value(row.layer ? lp : p, t);
+          if (el.textContent !== text) el.textContent = text;
         });
       }
 
-      // Live luma waveform + meters (motion energy, punched up on every cut).
-      const playing = Boolean(v && !v.paused && v.readyState >= 2);
-      if (playing && scopeOk && octx && ++frame % 3 === 0) {
+      // Live luma waveform + meters (motion energy, punched up on every cut). Reading video pixels
+      // back from the GPU is the costly part: ~15 times a second, and not during a camera flight
+      if (playing && scopeOk && octx && ++frame % 4 === 0 && !html.hasAttribute("data-flying")) {
         try {
           octx.drawImage(v!, 0, 0, 64, 36);
           const data = octx.getImageData(0, 0, 64, 36).data;
@@ -169,10 +205,11 @@ export function EditorMock() {
             const w = scope.width;
             const h = scope.height;
             sctx.globalCompositeOperation = "source-over";
-            sctx.fillStyle = "rgba(5, 4, 15, 0.55)";
+            sctx.fillStyle = "rgba(5, 6, 8, 0.55)";
             sctx.fillRect(0, 0, w, h);
             sctx.globalCompositeOperation = "lighter";
-            sctx.fillStyle = "rgba(150, 135, 255, 0.2)";
+            // Luma waveform in the scopes' classic neutral grey-white
+            sctx.fillStyle = "rgba(205, 214, 228, 0.18)";
             const cw = w / 64;
             for (let i = 0; i < 64 * 36; i++) {
               const o = i * 4;
@@ -193,8 +230,6 @@ export function EditorMock() {
       }
       if (meterLRef.current) meterLRef.current.style.transform = `scaleY(${level.toFixed(3)})`;
       if (meterRRef.current) meterRRef.current.style.transform = `scaleY(${(level * (0.9 + 0.08 * Math.sin(t * 17))).toFixed(3)})`;
-
-      raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
@@ -246,8 +281,8 @@ export function EditorMock() {
       ref={rootRef}
       role="group"
       aria-label="Демо: монтаж шоурила IDELUXE"
-      className="glass glass-strong overflow-hidden rounded-[1.6rem] p-0 text-left"
-      style={{ ["--t" as string]: 0 }}
+      className={cn("glass glass-strong overflow-hidden rounded-[1.6rem] p-0 text-left", className)}
+      data-no-spot
     >
       {/* Title bar */}
       <div className="flex items-center gap-3 border-b border-white/6 px-4 py-2.5">
@@ -263,25 +298,28 @@ export function EditorMock() {
               key={w}
               className={cn(
                 "rounded-md px-2.5 py-1 text-[11px]",
-                w === "Монтаж" ? "bg-accent/20 text-accent-soft shadow-[inset_0_-1px_0_rgb(160_148_255/0.8)]" : "text-dim",
+                w === "Монтаж" ? "bg-accent/20 text-accent-soft shadow-[inset_0_-1px_0_rgb(var(--rgb-accent)/0.8)]" : "text-dim",
               )}
             >
               {w}
             </li>
           ))}
         </ul>
-        <span aria-hidden className="ml-auto hidden font-mono text-[10px] text-dim sm:inline lg:ml-0">
+        <span aria-hidden className="ml-auto hidden shrink-0 font-mono text-[10px] whitespace-nowrap text-dim sm:inline lg:ml-0">
           1920×1080 · 23,976 fps
         </span>
       </div>
 
       {/* Panels */}
-      <div className="grid grid-cols-1 gap-px bg-white/[0.05] md:grid-cols-[minmax(0,1fr)_190px] lg:grid-cols-[250px_minmax(0,1fr)_190px]">
+      {/* Desktop: effect controls | program monitor | scopes. The monitor's column may be set from
+          outside (--editor-monitor: the hero fits it to the screen height), the side panels then
+          share the rest 250 : 190; without it they are 250 / 190 px and the monitor takes the rest */}
+      <div className="grid grid-cols-1 gap-px bg-white/[0.05] md:grid-cols-[minmax(0,1fr)_190px] lg:grid-cols-[minmax(0,1fr)_var(--editor-monitor,calc(100%_-_442px))_minmax(0,0.76fr)]">
         {/* Effect controls of the clip under the playhead */}
         <aside
           ref={fxRef}
           aria-hidden
-          className="hidden flex-col bg-ink-900/60 p-3 lg:flex"
+          className={cn("hidden flex-col bg-ink-900/60 p-3 lg:flex", SHORT_PANEL)}
           style={{ ["--lp" as string]: 0, ["--lpl" as string]: 0 }}
         >
           <PanelTitle>Элементы управления эффектами</PanelTitle>
@@ -296,12 +334,13 @@ export function EditorMock() {
               return (
                 <li key={i}>
                   {header && (
-                    <p className={cn("flex items-center gap-1.5 pt-1.5 pb-1 text-[10.5px] font-semibold", row.layer ? "text-pink" : "text-fg/85")}>
+                    <p className={cn("flex items-center gap-1.5 pt-1.5 pb-1 text-[10.5px] font-semibold", row.layer ? "text-rose" : "text-fg/85")}>
                       <span className="rounded bg-white/8 px-1 font-mono text-[9px] text-accent-soft">fx</span>
                       <span className="truncate">{row.group}</span>
                     </p>
                   )}
-                  <div className="grid grid-cols-[minmax(0,1fr)_auto_58px] items-center gap-2 pl-1">
+                  {/* The keyframe lane grows with the panel, like the effect controls' own timeline */}
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(58px,0.7fr)] items-center gap-2 pl-1">
                     <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted">
                       <Timer size={10} className={cn("shrink-0", row.keys.length ? "text-accent" : "text-dim/50")} />
                       <span className="truncate">{row.label}</span>
@@ -318,7 +357,7 @@ export function EditorMock() {
                         />
                       ))}
                       <span
-                        className="absolute inset-y-0 w-px bg-pink shadow-[0_0_4px_rgb(233_168_255/0.8)]"
+                        className="absolute inset-y-0 w-px bg-accent-soft shadow-[0_0_4px_rgb(var(--rgb-accent)/0.7)]"
                         style={{ left: row.layer ? "calc(var(--lpl) * 100%)" : "calc(var(--lp) * 100%)" }}
                       />
                     </span>
@@ -328,8 +367,8 @@ export function EditorMock() {
             })}
           </ul>
 
-          {/* Project bin = what's inside IDX PACK */}
-          <div className="mt-auto border-t border-white/6 pt-2.5">
+          {/* Project bin = what's inside IDX PACK (hidden on short screens: the hero needs the height) */}
+          <div className="mt-auto border-t border-white/6 pt-2.5 short:hidden">
             <PanelTitle>Проект · IDX PACK</PanelTitle>
             <ul className="mt-1.5 grid grid-cols-2 gap-1">
               {packStats.map((s, i) => {
@@ -350,7 +389,7 @@ export function EditorMock() {
         <div className="bg-ink-950/70 p-2.5 sm:p-3">
           <div className="flex items-center justify-between gap-3 px-0.5 pb-2">
             <PanelTitle>Программа: Showreel_2026</PanelTitle>
-            <span aria-hidden className="font-mono text-[10px] text-dim">
+            <span aria-hidden className="shrink-0 font-mono text-[10px] whitespace-nowrap text-dim">
               Вписать · Полное
             </span>
           </div>
@@ -402,9 +441,9 @@ export function EditorMock() {
         </div>
 
         {/* Scopes, meters, clip info */}
-        <aside aria-hidden className="hidden flex-col bg-ink-900/60 p-3 md:flex">
+        <aside aria-hidden className={cn("hidden flex-col bg-ink-900/60 p-3 md:flex", SHORT_PANEL)}>
           <PanelTitle>Lumetri Scopes</PanelTitle>
-          <div className="relative mt-2 aspect-[16/10] overflow-hidden rounded-md border border-white/6 bg-[#05040f]">
+          <div className="relative mt-2 aspect-[16/10] overflow-hidden rounded-md border border-white/6 bg-[#050608]">
             {[0, 25, 50, 75, 100].map((ire) => (
               <span key={ire} className="absolute inset-x-0 border-t border-white/[0.06]" style={{ bottom: `${3 + ire * 0.94}%` }}>
                 <span className="absolute -top-[5px] left-0.5 font-mono text-[7px] leading-none text-dim/70">{ire}</span>
@@ -435,8 +474,8 @@ export function EditorMock() {
             </dl>
           </div>
 
-          {/* Export queue follows the playhead */}
-          <div className="mt-auto border-t border-white/6 pt-2.5">
+          {/* Export queue follows the playhead (hidden on short screens, like the project bin) */}
+          <div className="mt-auto border-t border-white/6 pt-2.5 short:hidden">
             <PanelTitle>Очередь экспорта</PanelTitle>
             <div className="mt-1.5 rounded-md bg-white/[0.03] px-2 py-1.5">
               <div className="flex items-center justify-between text-[10px]">
@@ -444,7 +483,7 @@ export function EditorMock() {
                 <span ref={renderPctRef} className="font-mono text-accent-soft">0 %</span>
               </div>
               <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.07]">
-                <div className="h-full rounded-full bg-gradient-to-r from-accent-strong to-pink" style={{ width: "calc(var(--t) * 100%)" }} />
+                <div ref={exportBarRef} className="h-full origin-left rounded-full bg-gradient-to-r from-accent-strong to-accent-soft" style={{ transform: "scaleX(0)" }} />
               </div>
             </div>
           </div>
@@ -492,7 +531,7 @@ export function EditorMock() {
               </Lane>
             </Row>
             <Row label="V2">
-              <Lane className="h-3.5 sm:h-5">
+              <Lane className="h-3.5 sm:h-5 short:h-4">
                 {fxLayers.map((c, i) => (
                   <Block key={i} start={c.start} end={c.end} active={i === active.layer} className="border-accent/40 bg-accent/15 pl-2.5 text-accent-soft">
                     {c.end - c.start >= 0.55 && <span className="hidden truncate lg:block">{c.name}</span>}
@@ -503,7 +542,7 @@ export function EditorMock() {
               </Lane>
             </Row>
             <Row label="V1">
-              <Lane className="h-6 sm:h-9">
+              <Lane className="h-6 sm:h-9 short:h-7">
                 {clips.map((c, i) => {
                   const long = c.end - c.start >= 0.8;
                   return (
@@ -525,19 +564,19 @@ export function EditorMock() {
               </Lane>
             </Row>
             <Row label="A1">
-              <Lane className="h-5 sm:h-7">
+              <Lane className="h-5 sm:h-7 short:h-5">
                 <div className="absolute inset-0 overflow-hidden rounded-[5px] border border-teal/30 bg-teal/[0.07]">
                   <svg viewBox="0 0 100 20" preserveAspectRatio="none" className="size-full">
-                    <path d={WAVEFORM} fill="rgb(110 231 216 / 0.55)" />
+                    <path d={WAVEFORM} fill="rgb(143 185 174 / 0.55)" />
                   </svg>
                   <span className="absolute top-0.5 left-1.5 hidden font-mono text-[9px] text-teal/90 sm:block">beat_ideluxe.wav</span>
                 </div>
               </Lane>
             </Row>
-            <Row label="A2">
+            <Row label="A2" className="short:hidden">
               <Lane className="h-3.5 sm:h-4">
                 {sfx.map((c, i) => (
-                  <Block key={i} start={c.start} end={c.end} className="border-sky/40 bg-[repeating-linear-gradient(90deg,rgb(142_197_255/0.35)_0_1px,transparent_1px_3px)] text-sky">
+                  <Block key={i} start={c.start} end={c.end} className="border-sky/40 bg-[repeating-linear-gradient(90deg,rgb(147_178_212/0.35)_0_1px,transparent_1px_3px)] text-sky">
                     {c.end - c.start >= 0.4 && <span className="hidden truncate lg:block">{c.name}</span>}
                   </Block>
                 ))}
@@ -547,8 +586,10 @@ export function EditorMock() {
 
           {/* Scrub area + playhead, aligned with the lanes (header column is 2.25rem + gap) */}
           <div ref={lanesRef} onPointerDown={onScrub} className="absolute top-0 right-0 bottom-0 left-[calc(2.25rem+0.5rem)] cursor-ew-resize touch-pan-y">
-            <div className="pointer-events-none absolute top-0 bottom-0 w-px bg-pink shadow-[0_0_8px_rgb(233_168_255/0.9)]" style={{ left: "calc(var(--t) * 100%)" }}>
-              <span className="absolute -top-0.5 left-1/2 h-2.5 w-3 -translate-x-1/2 rounded-b-[4px] bg-pink" />
+            <div ref={playheadRef} className="pointer-events-none absolute inset-0">
+              <div className="absolute top-0 bottom-0 left-0 w-px bg-accent-soft shadow-[0_0_8px_rgb(var(--rgb-accent)/0.8)]">
+                <span className="absolute -top-0.5 left-1/2 h-2.5 w-3 -translate-x-1/2 rounded-b-[4px] bg-accent-soft" />
+              </div>
             </div>
           </div>
         </div>
@@ -575,7 +616,7 @@ function MeterBar({ barRef }: { barRef: React.Ref<HTMLSpanElement> }) {
     <span className="relative h-full w-2.5 overflow-hidden rounded-[2px] bg-white/[0.05]">
       <span
         ref={barRef}
-        className="absolute inset-0 origin-bottom bg-[linear-gradient(0deg,#6ee7d8_0%,#6ee7d8_55%,#ffc978_78%,#e9a8ff_100%)]"
+        className="absolute inset-0 origin-bottom bg-[linear-gradient(0deg,#93b2d4_0%,#93b2d4_55%,#e2b46e_78%,#f3f0ea_100%)]"
         style={{ transform: "scaleY(0)" }}
       />
     </span>
@@ -599,9 +640,9 @@ function TransportButton({ label, onClick, children, primary }: { label: string;
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, className, children }: { label: string; className?: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[2.25rem_minmax(0,1fr)] items-center gap-2">
+    <div className={cn("grid grid-cols-[2.25rem_minmax(0,1fr)] items-center gap-2", className)}>
       <span className={cn("flex h-full items-center justify-center rounded-md font-mono text-[10px] text-dim", label && "bg-white/[0.04]")}>{label}</span>
       {children}
     </div>
@@ -630,7 +671,7 @@ function Block({
       className={cn(
         "absolute inset-y-0 flex items-center gap-1 overflow-hidden rounded-[4px] border px-1 font-mono text-[9.5px] transition-[filter,box-shadow] duration-150",
         className,
-        active && "z-10 shadow-[0_0_0_1px_rgb(255_255_255/0.75),0_0_14px_rgb(160_148_255/0.6)] brightness-125",
+        active && "z-10 shadow-[0_0_0_1px_rgb(255_255_255/0.75),0_0_14px_rgb(var(--rgb-accent)/0.5)] brightness-125",
       )}
       style={{ left: `calc(${pct(start)} + 1px)`, width: `max(2px, calc(${pct(end - start)} - 2px))` }}
     >

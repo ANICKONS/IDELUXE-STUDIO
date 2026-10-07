@@ -14,10 +14,12 @@ export const manrope = Manrope({
   display: "swap",
 });
 
+// Only small labels and timecodes: not worth a preload on the critical path
 export const jetbrains = JetBrains_Mono({
   subsets: ["latin", "cyrillic"],
   variable: "--font-jetbrains",
   display: "swap",
+  preload: false,
 });
 
 export const fontVariables = `${unbounded.variable} ${manrope.variable} ${jetbrains.variable}`;

@@ -14,14 +14,14 @@ type Mode = "login" | "register";
 const copy: Record<Mode, { title: string; lead: string; submit: string; switchHint: string; switchAction: string }> = {
   login: {
     title: "С возвращением",
-    lead: "Войди, чтобы смотреть туториалы и открыть свой пак.",
+    lead: "Войди, чтобы смотреть туториалы, скачивать ресурсы и свой пак.",
     submit: "Войти",
     switchHint: "Ещё нет профиля?",
     switchAction: "Создать",
   },
   register: {
     title: "Создай профиль",
-    lead: "Профиль хранит просмотренные разборы и доступ к паку.",
+    lead: "Бесплатно: вводные туториалы, программы и часть плагинов откроются сразу.",
     submit: "Создать профиль",
     switchHint: "Уже есть профиль?",
     switchAction: "Войти",
@@ -40,10 +40,10 @@ function strength(password: string) {
 
 const levels = [
   { bar: "", text: "text-dim" },
-  { bar: "bg-pink", text: "text-pink" },
+  { bar: "bg-rose", text: "text-rose" },
   { bar: "bg-amber", text: "text-amber" },
-  { bar: "bg-accent", text: "text-accent-soft" },
-  { bar: "bg-neon", text: "text-neon" },
+  { bar: "bg-sky", text: "text-sky" },
+  { bar: "bg-teal", text: "text-teal" },
 ];
 
 function strengthLabel(password: string, level: number) {
@@ -85,6 +85,13 @@ export function AuthForm() {
     focusAfterSwitch.current = true;
   };
 
+  // «Создать аккаунт» links open the card on sign-up (config/routes → registerHref: /login#register).
+  // Read after mount: the page is static, the hash only exists in the browser
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off sync with the URL on mount
+    if (window.location.hash === "#register") setMode("register");
+  }, []);
+
   useEffect(() => {
     if (!focusAfterSwitch.current) return;
     focusAfterSwitch.current = false;
@@ -94,11 +101,11 @@ export function AuthForm() {
   const onCaps = (e: React.KeyboardEvent<HTMLInputElement>) => setCapsLock(e.getModifierState("CapsLock"));
 
   return (
-    <div className="glass relative w-full max-w-[26rem] animate-rise-in rounded-[2rem] p-7 sm:p-9">
+    <div className="glass arrive relative w-full max-w-[26rem] rounded-[2rem] p-7 sm:p-9">
       {/* Light falling on the card from above, and a bright seam on its top edge */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-44 rounded-t-[inherit] bg-[radial-gradient(70%_100%_at_50%_0%,rgb(107_91_255/0.24),transparent)]"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-44 rounded-t-[inherit] bg-[radial-gradient(70%_100%_at_50%_0%,rgb(var(--rgb-accent)/0.1),transparent)]"
       />
       <div aria-hidden className="pointer-events-none absolute inset-x-14 -top-px h-px bg-gradient-to-r from-transparent via-accent-soft/70 to-transparent" />
 
@@ -115,7 +122,10 @@ export function AuthForm() {
         </div>
       </div>
 
+      {/* method="post": a submit before the page has hydrated must never put the password into the
+          URL (a GET form would leave ?password=… in history and server logs) */}
       <form
+        method="post"
         className="mt-8"
         aria-label={isRegister ? "Регистрация" : "Вход"}
         onSubmit={(e) => {
@@ -262,8 +272,8 @@ export function AuthForm() {
           <p className="mt-6 flex animate-fade-up gap-3 rounded-2xl border border-accent/25 bg-accent/10 p-4 text-left text-[13px] leading-relaxed text-muted">
             <Info size={18} className="mt-0.5 shrink-0 text-accent-soft" aria-hidden />
             <span>
-              Вход и регистрация появятся вместе с личным кабинетом, сейчас форма только для вида и никуда ничего не отправляет. Доступ к IDX PACK
-              выдаёт{" "}
+              Вход и регистрация появятся вместе с личным кабинетом, сейчас форма только для вида и никуда ничего не отправляет. PACK и подписки пока
+              оформляет{" "}
               <a href={site.telegram.bot.url} target="_blank" rel="noopener noreferrer" className="text-accent-soft underline-offset-2 hover:underline">
                 Telegram-бот
               </a>
@@ -339,7 +349,7 @@ function ProviderButton({ label, onClick, children }: { label: string; onClick: 
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="group/provider inline-flex h-13 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] shadow-[inset_0_1px_0_rgb(255_255_255/0.08)] transition duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08] hover:shadow-[inset_0_1px_0_rgb(255_255_255/0.12),0_12px_28px_-14px_rgb(107_91_255/0.9)] active:translate-y-0 active:scale-[0.98]"
+      className="group/provider inline-flex h-13 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] shadow-[inset_0_1px_0_rgb(255_255_255/0.08)] transition duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08] hover:shadow-[inset_0_1px_0_rgb(255_255_255/0.12),0_12px_28px_-14px_rgb(0_0_0/0.9)] active:translate-y-0 active:scale-[0.98]"
     >
       <span className="transition-transform duration-300 group-hover/provider:scale-110">{children}</span>
     </button>

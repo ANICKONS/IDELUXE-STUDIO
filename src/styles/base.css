@@ -17,7 +17,7 @@
   }
 
   ::selection {
-    background: rgb(143 128 255 / 0.4);
+    background: rgb(var(--rgb-accent) / 0.35);
     color: #fff;
   }
 
@@ -39,9 +39,15 @@
     scroll-margin-top: 6.5rem;
   }
 
+  /* Edge's own show-password eye and clear cross: the form has its own toggle */
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none;
+  }
+
   /* Scrollbar in "editor" style */
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgb(143 128 255 / 0.35) transparent;
+    scrollbar-color: rgb(var(--rgb-fg) / 0.2) transparent;
   }
 }

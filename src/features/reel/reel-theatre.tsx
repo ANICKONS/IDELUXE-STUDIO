@@ -580,7 +580,7 @@ export function ReelTheatre() {
                   "relative overflow-hidden bg-black",
                   fullscreen ? "size-full" : theatre ? "rounded-[1.4rem]" : "rounded-2xl",
                   !fullscreen && "shadow-[0_40px_120px_-30px_rgb(0_0_0/0.9),0_0_0_1px_rgb(255_255_255/0.08)]",
-                  !theatre && "shadow-[0_24px_60px_-12px_rgb(0_0_0/0.85),0_0_0_1px_rgb(160_148_255/0.35)]",
+                  !theatre && "shadow-[0_24px_60px_-12px_rgb(0_0_0/0.85),0_0_0_1px_rgb(255_255_255/0.1)]",
                 )}
                 style={fullscreen ? undefined : { aspectRatio: String(reel.aspect) }}
               >
@@ -672,7 +672,7 @@ export function ReelTheatre() {
                       {ended ? <RotateCcw size={14} /> : playing ? <Pause size={14} /> : <Play size={14} />}
                     </MiniButton>
                     <div aria-hidden className="absolute inset-x-0 bottom-0 h-1 bg-white/10">
-                      <div className="h-full bg-gradient-to-r from-accent-strong via-accent to-pink" style={{ width: "calc(var(--p, 0) * 100%)" }} />
+                      <div className="h-full bg-gradient-to-r from-accent-strong/60 via-accent to-accent-soft" style={{ width: "calc(var(--p, 0) * 100%)" }} />
                     </div>
                   </>
                 )}
@@ -690,14 +690,14 @@ export function ReelTheatre() {
                   </div>
                   <div aria-hidden className="absolute inset-x-0 top-1/2 mt-1 h-1.5 -translate-y-1/2 overflow-hidden rounded-full bg-white/10">
                     <div className="absolute inset-y-0 left-0 bg-white/15" style={{ width: "calc(var(--b, 0) * 100%)" }} />
-                    <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-accent-strong via-accent to-pink" style={{ width: "calc(var(--p, 0) * 100%)" }} />
+                    <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-accent-strong/60 via-accent to-accent-soft" style={{ width: "calc(var(--p, 0) * 100%)" }} />
                   </div>
                   <div
                     aria-hidden
-                    className="absolute top-0 bottom-0 w-px -translate-x-1/2 bg-pink shadow-[0_0_8px_rgb(233_168_255/0.9)]"
+                    className="absolute top-0 bottom-0 w-px -translate-x-1/2 bg-accent-soft shadow-[0_0_8px_rgb(var(--rgb-accent)/0.8)]"
                     style={{ left: "calc(var(--p, 0) * 100%)" }}
                   >
-                    <span className="absolute -top-0.5 left-1/2 h-2.5 w-3 -translate-x-1/2 rounded-b-[4px] bg-pink" />
+                    <span className="absolute -top-0.5 left-1/2 h-2.5 w-3 -translate-x-1/2 rounded-b-[4px] bg-accent-soft" />
                   </div>
                   <input
                     ref={rangeRef}

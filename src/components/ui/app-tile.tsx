@@ -2,12 +2,13 @@ import { cn } from "@/lib/utils";
 
 export type AppCode = "Ae" | "Pr" | "Vg" | "Me" | "3D";
 
+/** Graphite glass for every app; only the letters and the faint glow carry a muted tint. */
 const palettes: Record<AppCode, { from: string; to: string; letter: [string, string]; glow: string }> = {
-  Ae: { from: "#3b33b8", to: "#0a0830", letter: ["#f1efff", "#9d93ff"], glow: "110 90 255" },
-  Pr: { from: "#4b2aa8", to: "#12062e", letter: ["#fbeaff", "#d99bff"], glow: "170 90 255" },
-  Vg: { from: "#23408f", to: "#060b2a", letter: ["#eaf3ff", "#8ec5ff"], glow: "80 140 255" },
-  Me: { from: "#2f2a7a", to: "#080620", letter: ["#eeecff", "#b3a9ff"], glow: "130 110 255" },
-  "3D": { from: "#3a2a8a", to: "#0b0726", letter: ["#fff3fb", "#e9a8ff"], glow: "210 120 255" },
+  Ae: { from: "#2c2f38", to: "#0a0b0e", letter: ["#ffffff", "#c3cbe4"], glow: "150 168 214" },
+  Pr: { from: "#302c33", to: "#0b0a0d", letter: ["#ffffff", "#e2c6d2"], glow: "204 160 182" },
+  Vg: { from: "#27303a", to: "#090b0e", letter: ["#ffffff", "#b9d0e6"], glow: "140 180 222" },
+  Me: { from: "#2e2c28", to: "#0b0a09", letter: ["#ffffff", "#e8d8ba"], glow: "214 181 131" },
+  "3D": { from: "#312d27", to: "#0c0a08", letter: ["#ffffff", "#ecd1a4"], glow: "214 181 131" },
 };
 
 /**
@@ -43,7 +44,7 @@ export function AppTile({
           style={{
             borderRadius: radius,
             transform: `translate3d(${size * 0.03}px, ${size * 0.05}px, -${size * 0.08}px)`,
-            background: `linear-gradient(160deg, rgb(${p.glow} / 0.5), #05031a 70%)`,
+            background: `linear-gradient(160deg, rgb(${p.glow} / 0.35), #060709 70%)`,
             filter: "blur(0.5px)",
           }}
         />
@@ -52,13 +53,13 @@ export function AppTile({
           className="absolute inset-0 flex items-center justify-center overflow-hidden"
           style={{
             borderRadius: radius,
-            background: `radial-gradient(130% 120% at 28% 18%, ${p.from} 0%, ${p.to} 62%, #03020f 100%)`,
+            background: `radial-gradient(130% 120% at 28% 18%, ${p.from} 0%, ${p.to} 62%, #030304 100%)`,
             boxShadow: [
-              `inset 0 ${size * 0.02}px ${size * 0.01}px rgb(255 255 255 / 0.55)`,
+              `inset 0 ${size * 0.02}px ${size * 0.01}px rgb(255 255 255 / 0.4)`,
               `inset 0 -${size * 0.09}px ${size * 0.2}px rgb(0 0 0 / 0.55)`,
-              `inset 0 0 0 ${Math.max(1, size * 0.014)}px rgb(${p.glow} / 0.55)`,
-              `0 ${size * 0.3}px ${size * 0.55}px -${size * 0.12}px rgb(${p.glow} / 0.55)`,
-              `0 0 ${size * 0.8}px rgb(${p.glow} / 0.28)`,
+              `inset 0 0 0 ${Math.max(1, size * 0.014)}px rgb(${p.glow} / 0.32)`,
+              `0 ${size * 0.3}px ${size * 0.55}px -${size * 0.12}px rgb(0 0 0 / 0.7)`,
+              `0 0 ${size * 0.8}px rgb(${p.glow} / 0.1)`,
             ].join(", "),
           }}
         >
@@ -70,7 +71,7 @@ export function AppTile({
               WebkitBackgroundClip: "text",
               backgroundClip: "text",
               color: "transparent",
-              filter: `drop-shadow(0 0 ${size * 0.06}px rgb(${p.glow} / 0.9))`,
+              filter: `drop-shadow(0 0 ${size * 0.06}px rgb(${p.glow} / 0.45))`,
             }}
           >
             {code}

@@ -24,7 +24,7 @@ export function Avatar({
     <span
       className={cn(
         "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-display font-semibold text-white",
-        "bg-[linear-gradient(135deg,#a497ff,#5241f0)] shadow-[inset_0_1px_0_rgb(255_255_255/0.4),0_0_0_1px_rgb(180_170_255/0.35)]",
+        "bg-[linear-gradient(135deg,#d9bd8f,#8f6c3d)] shadow-[inset_0_1px_0_rgb(255_255_255/0.4),0_0_0_1px_rgb(var(--rgb-accent-soft)/0.35)]",
         className,
       )}
       style={{ width: size, height: size, fontSize: Math.max(10, size * 0.36) }}

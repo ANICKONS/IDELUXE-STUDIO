@@ -10,7 +10,9 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer id={FOOTER_ID} className="relative mt-24 px-3 pb-6 sm:px-4">
+    // Until the card is narrow enough to leave the corner free (≈1330 px), an empty strip at the
+    // bottom keeps the assistant's launcher (fixed, bottom-right) off the footer's text
+    <footer id={FOOTER_ID} className="relative mt-24 px-3 pb-24 sm:px-4 min-[1330px]:pb-6">
       <div className="glass mx-auto max-w-6xl rounded-[2rem] px-6 py-10 sm:px-10">
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
           <div>

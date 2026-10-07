@@ -21,14 +21,14 @@ export function ComingSoon({
 }) {
   return (
     <section className="px-4 pt-32 pb-8 sm:pt-40">
-      <div className="glass mx-auto max-w-2xl animate-fade-up rounded-[2rem] p-8 text-center sm:p-12">
+      <div className="glass arrive mx-auto max-w-2xl rounded-[2rem] p-8 text-center sm:p-12">
         <p className="font-mono text-xs tracking-[0.2em] text-accent-soft">RENDER QUEUE · В РАБОТЕ</p>
         <h1 className="mt-5 font-display text-3xl font-semibold text-balance sm:text-4xl">{title}</h1>
         <p className="mx-auto mt-4 max-w-lg leading-relaxed text-muted">{description}</p>
 
         {/* A render progress bar that never quite finishes */}
         <div aria-hidden className="mx-auto mt-8 h-1.5 max-w-sm overflow-hidden rounded-full bg-white/[0.07]">
-          <div className="h-full w-[72%] rounded-full bg-gradient-to-r from-accent-strong via-accent to-pink" />
+          <div className="h-full w-[72%] rounded-full bg-gradient-to-r from-accent-strong/60 via-accent to-accent-soft" />
         </div>
 
         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">

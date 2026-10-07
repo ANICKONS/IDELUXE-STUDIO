@@ -2,15 +2,15 @@ import { cn } from "@/lib/utils";
 
 /**
  * Section header styled like a composition marker in an editor:
- * «COMP 02 · 00:00:24:00 ─────» followed by the title.
- * `ghost` adds a huge outlined word behind the title.
+ * «COMP 02 · 00:00:24:00 ─────» followed by the title, over a huge outlined word — «IDX» by
+ * default (`ghost`, e.g. «FAQ»; `false` — none).
  */
 export function SectionHeading({
   comp,
   timecode,
   title,
   description,
-  ghost,
+  ghost = "IDX",
   align = "left",
   className,
   as: Tag = "h2",
@@ -19,7 +19,7 @@ export function SectionHeading({
   timecode: string;
   title: React.ReactNode;
   description?: React.ReactNode;
-  ghost?: string;
+  ghost?: string | false;
   align?: "left" | "center";
   className?: string;
   as?: "h1" | "h2";
