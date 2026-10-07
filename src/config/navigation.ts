@@ -27,9 +27,27 @@ export const mainNav: NavItem[] = [
   { label: "Тарифы", href: routes.pricing, highlight: true },
 ];
 
+/**
+ * Header menu for a signed-in account: "/" is its home then (proxy.ts), the landing's blocks are
+ * gone, so the menu leads to the platform's sections.
+ */
+export const appNav: NavItem[] = [
+  { label: "Главная", href: routes.home },
+  { label: "Туториалы", href: routes.learn },
+  { label: "Ресурсы", href: routes.resources },
+  { label: "Тарифы", href: routes.pricing, highlight: true },
+];
+
+/** Footer «Навигация» column for a signed-in account (the guest one is in footerNav). */
+export const appFooterLinks: NavLink[] = [
+  { label: "Моя студия", href: routes.home },
+  { label: "Профиль", href: routes.profile },
+];
+
 /** Footer columns: landing blocks, then the pages. */
-export const footerNav: { title: string; links: NavLink[] }[] = [
-  { title: "Навигация", links: mainNav.filter((n) => n.section).map(({ label, href }) => ({ label, href })) },
+export const footerNav: { title: string; links: NavLink[]; guestOnly?: boolean }[] = [
+  // The landing's blocks: a signed-in account sees appFooterLinks here instead
+  { title: "Навигация", links: mainNav.filter((n) => n.section).map(({ label, href }) => ({ label, href })), guestOnly: true },
   {
     title: "Платформа",
     links: [

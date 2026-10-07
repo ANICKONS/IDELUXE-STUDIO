@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isAiConfigured, serverEnv } from "@/config/env.server";
 import { buildSystemPrompt } from "@/features/chat/system-prompt";
+import { can } from "@/lib/access-rules";
 import { clientIp } from "@/lib/server/client-ip";
 import { consumeDailyQuota, hashKey } from "@/lib/server/rate-limit";
 import { isSameOrigin, readJsonBody } from "@/lib/server/request";
+import { getViewer } from "@/lib/server/session";
 
 export const maxDuration = 60;
 
@@ -55,14 +57,23 @@ const streamHeaders = {
 };
 
 /**
- * AI assistant. Public endpoint (no auth), protected by:
+ * AI assistant — part of IDX PRO (content/plans.ts). Protected by:
  * - same-origin check (only this site's pages; requests without Origin are refused);
+ * - the session and the plan: no account → 401 `auth`, no PRO → 403 `plan` (the widget shows a lock);
  * - body size (counted while reading), message count, per-message and total length limits;
- * - daily quotas: per IP and for the whole site (in memory, see lib/server/rate-limit.ts).
+ * - daily quotas: per account, per IP and for the whole site (in memory, see lib/server/rate-limit.ts).
  */
 export async function POST(request: NextRequest) {
   if (!isSameOrigin(request)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const viewer = await getViewer();
+  if (!viewer) {
+    return NextResponse.json({ error: "Войди в аккаунт, чтобы спросить ассистента.", code: "auth" }, { status: 401 });
+  }
+  if (!can(viewer.access, "ai")) {
+    return NextResponse.json({ error: "ИИ-ассистент открывается с подпиской IDX PRO.", code: "plan" }, { status: 403 });
   }
 
   const read = await readJsonBody(request, MAX_BODY_BYTES);
@@ -85,10 +96,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const quota = consumeDailyQuota(`chat:${hashKey(clientIp(request))}`, serverEnv.chatDailyLimit);
-  if (!quota.allowed) {
-    return NextResponse.json({ error: "Лимит сообщений на сегодня исчерпан. Возвращайся завтра!" }, { status: 429 });
-  }
+  const tooMany = () => NextResponse.json({ error: "Лимит сообщений на сегодня исчерпан. Возвращайся завтра!" }, { status: 429 });
+  if (!consumeDailyQuota(`chat:user:${viewer.user.id}`, serverEnv.chatUserDailyLimit).allowed) return tooMany();
+  if (!consumeDailyQuota(`chat:${hashKey(clientIp(request))}`, serverEnv.chatDailyLimit).allowed) return tooMany();
   // Site-wide ceiling: rotating IPs can't run up the bill
   if (!consumeDailyQuota("chat:global", serverEnv.chatGlobalDailyLimit).allowed) {
     return NextResponse.json({ error: "Ассистент на сегодня отдыхает. Возвращайся завтра!" }, { status: 429 });

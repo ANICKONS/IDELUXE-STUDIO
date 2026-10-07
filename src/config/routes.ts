@@ -3,12 +3,19 @@
  * moves or a new one appears, change it here (and add the page in src/app).
  */
 export const routes = {
+  /** The landing for guests; for a signed-in account the same URL shows its home (proxy.ts → `dashboard`). */
   home: "/",
+  /** The signed-in home, served at "/" (link to `home`, not here). */
+  dashboard: "/home",
   pricing: "/pricing",
   learn: "/learn",
   resources: "/resources",
   login: "/login",
   profile: "/profile",
+  /** Where the letter's link lands: reports the result of confirming the address. */
+  verifyEmail: "/verify-email",
+  /** The new-password form, opened from the reset letter with ?token=… */
+  resetPassword: "/reset-password",
   legal: {
     offer: "/legal/offer",
     privacy: "/legal/privacy",

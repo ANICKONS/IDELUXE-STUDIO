@@ -21,7 +21,8 @@ const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${mediaOrigin}`.trim(),
+  // Avatars of accounts signed in with Google (googleusercontent) or Telegram (telesco.pe)
+  `img-src 'self' data: blob: https://lh3.googleusercontent.com https://*.telesco.pe ${mediaOrigin}`.trim(),
   `media-src 'self' blob: ${mediaOrigin}`.trim(),
   "font-src 'self'",
   "connect-src 'self'",

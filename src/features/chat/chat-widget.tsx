@@ -1,9 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, RotateCcw, Sparkles, Square, X } from "lucide-react";
+import { ArrowRight, ArrowUp, Lock, RotateCcw, Sparkles, Square, X } from "lucide-react";
 import { Markdown } from "@/features/chat/markdown";
 import { OPEN_CHAT_EVENT, type OpenChatDetail } from "@/features/chat/events";
+import { routes } from "@/config/routes";
+import { can } from "@/lib/access-rules";
+import { useViewer } from "@/lib/viewer";
 import { cn } from "@/lib/utils";
 
 type Message = { id: string; role: "user" | "assistant"; content: string; error?: boolean };
@@ -35,7 +39,16 @@ const suggestions = [
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+/**
+ * The AI assistant: a launcher in the corner and a panel that grows out of it. Part of IDX PRO:
+ * without it (or without an account) the panel shows what the assistant does and how to open it;
+ * the server checks the same on every message (/api/chat → 401 / 403).
+ */
 export function ChatWidget() {
+  const { status, viewer } = useViewer();
+  // The server may know better (access ended since the page loaded): its answer locks the panel too
+  const [lockedByServer, setLockedByServer] = useState<"auth" | "plan" | null>(null);
+  const lock: "auth" | "plan" | null = lockedByServer ?? (status !== "ready" ? null : !viewer ? "auth" : can(viewer.access, "ai") ? null : "plan");
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -139,6 +152,12 @@ export function ChatWidget() {
 
         if (!res.ok || !res.body) {
           const data = await res.json().catch(() => null);
+          if (data?.code === "auth" || data?.code === "plan") {
+            setLockedByServer(data.code);
+            setMessages((prev) => prev.filter((m) => m.id !== assistantId && m.id !== userMsg.id));
+            setInput(content);
+            return;
+          }
           patch((m) => ({ ...m, content: data?.error ?? "Не удалось получить ответ. Попробуй ещё раз.", error: true }));
           return;
         }
@@ -213,6 +232,10 @@ export function ChatWidget() {
             </button>
           </header>
 
+          {lock ? (
+            <LockedPanel reason={lock} />
+          ) : (
+          <>
           <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4" aria-live="polite">
             <Bubble role="assistant">
               Привет! Я помогу с After Effects, Premiere Pro, Vegas Pro, экспортом, цветом и звуком. Спрашивай что угодно по
@@ -285,6 +308,8 @@ export function ChatWidget() {
             </div>
             <p className="mt-2 px-1 text-[10.5px] text-dim">ИИ может ошибаться. Не отправляй пароли и личные данные.</p>
           </form>
+          </>
+          )}
       </section>
 
       <button
@@ -311,6 +336,40 @@ export function ChatWidget() {
         )}
       </button>
     </>
+  );
+}
+
+/** Instead of the conversation: what the assistant does and how to get it. */
+function LockedPanel({ reason }: { reason: "auth" | "plan" }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-7 py-8 text-center">
+      <span
+        aria-hidden
+        className="inline-flex size-14 items-center justify-center rounded-2xl border border-accent/35 bg-accent/12 text-accent-soft shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_0_30px_-6px_rgb(var(--rgb-accent)/0.35)]"
+      >
+        <Lock size={22} />
+      </span>
+      <p className="mt-5 font-mono text-[10px] tracking-[0.18em] text-accent-soft uppercase">В подписке IDX PRO</p>
+      <h2 className="mt-2 font-display text-xl font-semibold text-balance">Ассистент по монтажу 24/7</h2>
+      <p className="mt-3 text-sm leading-relaxed text-muted">
+        Подскажет эффект, настройки экспорта и горячие клавиши, разберёт ошибку рендера в After Effects, Premiere Pro и Vegas Pro.
+        Открывается с IDX PRO или IDX FULL.
+      </p>
+      <div className="mt-7 flex w-full flex-col gap-2.5">
+        <Link href={routes.pricing} className="btn btn-primary btn-md w-full">
+          {reason === "auth" ? "Смотреть тарифы" : "Открыть IDX PRO"} <ArrowRight size={16} />
+        </Link>
+        {reason === "auth" ? (
+          <Link href={routes.login} className="btn btn-glass btn-md w-full">
+            Войти
+          </Link>
+        ) : (
+          <Link href={routes.profile} className="btn btn-glass btn-md w-full">
+            Есть промокод?
+          </Link>
+        )}
+      </div>
+    </div>
   );
 }
 

@@ -1,15 +1,43 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type InputHTMLAttributes, type ReactNode, type Ref } from "react";
-import { ArrowRight, Check, Eye, EyeOff, Info, LockKeyhole, Mail, TriangleAlert, UserRound, type LucideIcon } from "lucide-react";
-import { GoogleIcon, LogoMark, TelegramIcon } from "@/components/icons";
+import { ArrowRight, Check, Eye, EyeOff, Info, LockKeyhole, Mail, MailCheck, TriangleAlert, UserRound, type LucideIcon } from "lucide-react";
+import { GoogleIcon, TelegramIcon } from "@/components/icons";
 import { routes } from "@/config/routes";
 import { site } from "@/config/site";
-import { pluralRu } from "@/lib/format";
+import { AuthCard } from "@/features/auth/auth-card";
+import { MIN_PASSWORD, PasswordMeter } from "@/features/auth/password-meter";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import { useViewer } from "@/lib/viewer";
 
 type Mode = "login" | "register";
+/** The note under the form: a sign-in way the server has no keys for, or a hint. */
+type Notice = "telegram" | "google" | "need-email";
+/** A letter is on its way: the form gives way to «проверь почту». */
+type Sent = { kind: "verify" | "reset"; email: string };
+
+/** Better Auth's error codes > what to tell the person. */
+function errorText(error: { code?: string; status?: number; message?: string }): string {
+  if (error.status === 429) return "Слишком много попыток. Подожди минуту и попробуй снова.";
+  switch (error.code) {
+    case "INVALID_EMAIL_OR_PASSWORD":
+      return "Неверный email или пароль.";
+    case "USER_ALREADY_EXISTS":
+    case "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL":
+      return "Аккаунт с этим email уже есть. Войди в него.";
+    case "INVALID_EMAIL":
+      return "Проверь email: похоже, в нём опечатка.";
+    case "PASSWORD_TOO_SHORT":
+      return `Пароль слишком короткий: нужно от ${MIN_PASSWORD} символов.`;
+    case "PASSWORD_TOO_LONG":
+      return "Пароль слишком длинный.";
+    default:
+      return "Не получилось. Попробуй ещё раз.";
+  }
+}
 
 const copy: Record<Mode, { title: string; lead: string; submit: string; switchHint: string; switchAction: string }> = {
   login: {
@@ -28,51 +56,30 @@ const copy: Record<Mode, { title: string; lead: string; submit: string; switchHi
   },
 };
 
-const MIN_PASSWORD = 8;
-
-/** Password strength: 0 — empty, 1 — too short or one kind of characters … 4 — long and varied. */
-function strength(password: string) {
-  if (!password) return 0;
-  if (password.length < MIN_PASSWORD) return 1;
-  const kinds = [/[a-zа-яё]/, /[A-ZА-ЯЁ]/, /\d/, /[^\p{L}\d]/u].filter((re) => re.test(password)).length;
-  return Math.min(4, 1 + (password.length >= 12 ? 1 : 0) + Math.max(0, kinds - 1));
-}
-
-const levels = [
-  { bar: "", text: "text-dim" },
-  { bar: "bg-rose", text: "text-rose" },
-  { bar: "bg-amber", text: "text-amber" },
-  { bar: "bg-sky", text: "text-sky" },
-  { bar: "bg-teal", text: "text-teal" },
-];
-
-function strengthLabel(password: string, level: number) {
-  if (!password) return `Минимум ${MIN_PASSWORD} символов`;
-  const left = MIN_PASSWORD - password.length;
-  if (left > 0) return `Ещё ${left} ${pluralRu(left, ["символ", "символа", "символов"])}`;
-  return ["", "Слабый: добавь цифры или заглавные", "Средний пароль", "Хороший пароль", "Надёжный пароль"][level];
-}
-
 /**
- * Sign-in / sign-up form — a design stub. Nothing is sent or stored anywhere: submitting shows a
- * note that accounts are coming. When auth is ready, replace `onSubmit` (and the provider buttons'
- * `onClick`) with the real calls and pass the user to <SiteShell user={…}> (see README → «Авторизацию»).
+ * Three ways in, all through Better Auth (lib/auth-client.ts): e-mail with a password, Telegram and
+ * Google. The two providers are redirects — the server decides whether it has their keys, and if a
+ * button comes back with an error, the card says that way isn't connected yet.
  *
- * One card for both modes: the switch is a link under the form, the extra registration fields
- * slide in and out. Floating labels, show-password, Caps Lock warning, a strength meter on sign-up;
- * Telegram and Google sign-in as two icon buttons.
+ * With mail set up (lib/server/mail.ts) a new account must confirm its address first: the form
+ * then gives way to «проверь почту» with a resend button. The same screen appears when an
+ * unconfirmed account tries to sign in, and after asking for a password reset.
+ * On success the site reloads at "/", which is the account's home then.
  */
 export function AuthForm() {
   const [mode, setMode] = useState<Mode>("login");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
-  const [notice, setNotice] = useState(false);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [sent, setSent] = useState<Sent | null>(null);
   const id = useId();
   const field = (name: string) => `${id}-${name}`;
   const text = copy[mode];
   const isRegister = mode === "register";
-  const level = strength(password);
 
   const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
@@ -81,15 +88,28 @@ export function AuthForm() {
 
   const switchMode = () => {
     setMode(isRegister ? "login" : "register");
-    setNotice(false);
+    setNotice(null);
+    setError(null);
     focusAfterSwitch.current = true;
   };
+
+  // Already signed in (e.g. an old tab): this page has nothing to do, go home
+  const router = useRouter();
+  const { viewer } = useViewer();
+  useEffect(() => {
+    if (viewer) router.replace(routes.home);
+  }, [viewer, router]);
 
   // «Создать аккаунт» links open the card on sign-up (config/routes → registerHref: /login#register).
   // Read after mount: the page is static, the hash only exists in the browser
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off sync with the URL on mount
-    if (window.location.hash === "#register") setMode("register");
+    const sync = () => {
+      if (window.location.hash === "#register") setMode("register");
+    };
+    sync();
+    // Also when only the hash changes on this page (no remount then)
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
   }, []);
 
   useEffect(() => {
@@ -100,37 +120,79 @@ export function AuthForm() {
 
   const onCaps = (e: React.KeyboardEvent<HTMLInputElement>) => setCapsLock(e.getModifierState("CapsLock"));
 
-  return (
-    <div className="glass arrive relative w-full max-w-[26rem] rounded-[2rem] p-7 sm:p-9">
-      {/* Light falling on the card from above, and a bright seam on its top edge */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-44 rounded-t-[inherit] bg-[radial-gradient(70%_100%_at_50%_0%,rgb(var(--rgb-accent)/0.1),transparent)]"
+  /** Asks for a password reset link; the answer is the same whether the account exists or not. */
+  const requestReset = async () => {
+    if (!email.trim()) {
+      setNotice("need-email");
+      emailRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    setPending(true);
+    setNotice(null);
+    setError(null);
+    await authClient.requestPasswordReset({ email: email.trim(), redirectTo: routes.resetPassword });
+    setPending(false);
+    setSent({ kind: "reset", email: email.trim() });
+  };
+
+  if (sent) {
+    return (
+      <SentCard
+        sent={sent}
+        onBack={() => {
+          setSent(null);
+          setPassword("");
+          setMode("login");
+        }}
       />
-      <div aria-hidden className="pointer-events-none absolute inset-x-14 -top-px h-px bg-gradient-to-r from-transparent via-accent-soft/70 to-transparent" />
+    );
+  }
 
-      <div className="text-center">
-        <div className="relative mx-auto w-fit">
-          <span aria-hidden className="absolute -inset-3 rounded-full bg-accent-strong/30 blur-xl" />
-          <LogoMark size={52} className="relative" />
-        </div>
-        <p className="mt-5 font-mono text-[10px] tracking-[0.2em] text-dim uppercase">IDELUXE · Личный кабинет</p>
-        {/* Re-mounts on switch, so the new title glides in */}
-        <div key={mode} className="animate-fade-up">
-          <h1 className="mt-3 font-display text-[1.65rem] leading-tight font-semibold">{text.title}</h1>
-          <p className="mx-auto mt-2 max-w-[19rem] text-sm leading-relaxed text-muted">{text.lead}</p>
-        </div>
-      </div>
-
+  return (
+    <AuthCard title={text.title} lead={text.lead} titleKey={mode}>
       {/* method="post": a submit before the page has hydrated must never put the password into the
           URL (a GET form would leave ?password=… in history and server logs) */}
       <form
         method="post"
         className="mt-8"
         aria-label={isRegister ? "Регистрация" : "Вход"}
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          setNotice(true);
+          if (pending) return;
+          const data = new FormData(e.currentTarget);
+          const address = String(data.get("email") ?? "").trim();
+          setPending(true);
+          setError(null);
+          setNotice(null);
+          const { data: result, error: failed } = isRegister
+            ? await authClient.signUp.email({
+                name: String(data.get("name") ?? "").trim(),
+                email: address,
+                password,
+                // Where the link in the letter lands
+                callbackURL: routes.verifyEmail,
+              })
+            : await authClient.signIn.email({ email: address, password, rememberMe: true });
+
+          if (failed) {
+            setPending(false);
+            // The address was never confirmed: offer the letter again instead of an error
+            if (failed.code === "EMAIL_NOT_VERIFIED") {
+              await authClient.sendVerificationEmail({ email: address, callbackURL: routes.verifyEmail });
+              setSent({ kind: "verify", email: address });
+              return;
+            }
+            setError(errorText(failed));
+            return;
+          }
+          // A fresh account with no session: the server is waiting for the address to be confirmed
+          if (isRegister && result && !("token" in result && result.token)) {
+            setPending(false);
+            setSent({ kind: "verify", email: address });
+            return;
+          }
+          // A full reload: the header, the caches and "/" (now the account's home) start fresh
+          window.location.assign(routes.home);
         }}
       >
         <Collapse open={isRegister}>
@@ -150,7 +212,20 @@ export function AuthForm() {
           </div>
         </Collapse>
 
-        <Field ref={emailRef} id={field("email")} label="Email" icon={Mail} name="email" type="email" autoComplete="email" inputMode="email" required maxLength={120} />
+        <Field
+          ref={emailRef}
+          id={field("email")}
+          label="Email"
+          icon={Mail}
+          name="email"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          required
+          maxLength={120}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
         <div className="mt-3">
           <Field
@@ -193,20 +268,13 @@ export function AuthForm() {
 
         {/* Sign-up: strength meter */}
         <Collapse open={isRegister}>
-          <div id={field("strength")} className="pt-3">
-            <div aria-hidden className="flex gap-1.5">
-              {[1, 2, 3, 4].map((i) => (
-                <span key={i} className={cn("h-1 flex-1 rounded-full transition-colors duration-300", level >= i ? levels[level].bar : "bg-white/10")} />
-              ))}
-            </div>
-            <p className={cn("mt-2 text-xs transition-colors", levels[level].text)}>{strengthLabel(password, level)}</p>
-          </div>
+          <PasswordMeter password={password} id={field("strength")} className="pt-3" />
         </Collapse>
 
         {/* Sign-in: password reset */}
         <Collapse open={!isRegister}>
           <div className="flex justify-end pt-2.5">
-            <button type="button" onClick={() => setNotice(true)} className="rounded-md text-xs text-accent-soft transition hover:text-fg">
+            <button type="button" onClick={requestReset} disabled={pending} className="rounded-md text-xs text-accent-soft transition hover:text-fg disabled:opacity-60">
               Забыли пароль?
             </button>
           </div>
@@ -237,8 +305,18 @@ export function AuthForm() {
           </label>
         </Collapse>
 
-        <button type="submit" className="group/submit btn btn-primary btn-md mt-6 h-12 w-full">
-          {text.submit}
+        {/* Errors right above the button; aria-live, so screen readers hear them */}
+        <div aria-live="assertive">
+          {error && (
+            <p className="mt-5 flex animate-fade-up items-start gap-2 rounded-2xl border border-rose/35 bg-rose/10 px-4 py-3 text-[13px] leading-relaxed text-fg/90">
+              <TriangleAlert size={16} className="mt-0.5 shrink-0 text-rose" aria-hidden />
+              {error}
+            </p>
+          )}
+        </div>
+
+        <button type="submit" disabled={pending} aria-busy={pending} className="group/submit btn btn-primary btn-md mt-6 h-12 w-full">
+          {pending ? "Секунду…" : text.submit}
           <ArrowRight size={17} className="transition-transform duration-300 group-hover/submit:translate-x-0.5" />
         </button>
       </form>
@@ -249,12 +327,29 @@ export function AuthForm() {
 
       {/* Providers: icons only, the name is in the label and the tooltip */}
       <div className="grid grid-cols-2 gap-3">
-        <ProviderButton label="Войти через Telegram" onClick={() => setNotice(true)}>
+        <ProviderButton
+          label="Войти через Telegram"
+          onClick={async () => {
+            setNotice(null);
+            setError(null);
+            // Leaves for Telegram and comes back to "/"; an error means the keys aren't set
+            const { error: failed } = await authClient.signIn.social({ provider: "telegram", callbackURL: routes.home });
+            if (failed) setNotice("telegram");
+          }}
+        >
           <span className="inline-flex size-7 items-center justify-center rounded-full bg-[linear-gradient(180deg,#3fb6ec,#1d93d2)] shadow-[0_4px_14px_-4px_rgb(42_171_238/0.8)]">
             <TelegramIcon size={15} className="-ml-0.5 text-white" />
           </span>
         </ProviderButton>
-        <ProviderButton label="Войти через Google" onClick={() => setNotice(true)}>
+        <ProviderButton
+          label="Войти через Google"
+          onClick={async () => {
+            setNotice(null);
+            setError(null);
+            const { error: failed } = await authClient.signIn.social({ provider: "google", callbackURL: routes.home });
+            if (failed) setNotice("google");
+          }}
+        >
           <GoogleIcon size={24} />
         </ProviderButton>
       </div>
@@ -266,23 +361,82 @@ export function AuthForm() {
         </button>
       </p>
 
-      {/* Stub notice; aria-live, so screen readers hear it after submitting */}
+      {/* aria-live, so screen readers hear the note */}
       <div aria-live="polite">
         {notice && (
           <p className="mt-6 flex animate-fade-up gap-3 rounded-2xl border border-accent/25 bg-accent/10 p-4 text-left text-[13px] leading-relaxed text-muted">
             <Info size={18} className="mt-0.5 shrink-0 text-accent-soft" aria-hidden />
             <span>
-              Вход и регистрация появятся вместе с личным кабинетом, сейчас форма только для вида и никуда ничего не отправляет. PACK и подписки пока
-              оформляет{" "}
-              <a href={site.telegram.bot.url} target="_blank" rel="noopener noreferrer" className="text-accent-soft underline-offset-2 hover:underline">
-                Telegram-бот
-              </a>
-              .
+              {notice === "telegram" && "Вход через Telegram пока не подключён. Войди по email — займёт минуту."}
+              {notice === "google" && "Вход через Google пока не подключён. Войди по email — займёт минуту."}
+              {notice === "need-email" && "Впиши email в поле выше и нажми «Забыли пароль?» ещё раз — пришлём ссылку на смену пароля."}
             </span>
           </p>
         )}
       </div>
-    </div>
+    </AuthCard>
+  );
+}
+
+/** «Проверь почту»: the form is done, the next step is in the letter. */
+function SentCard({ sent, onBack }: { sent: Sent; onBack: () => void }) {
+  const [again, setAgain] = useState(false);
+  const [pending, setPending] = useState(false);
+  const verify = sent.kind === "verify";
+
+  const resend = async () => {
+    setPending(true);
+    if (verify) await authClient.sendVerificationEmail({ email: sent.email, callbackURL: routes.verifyEmail });
+    else await authClient.requestPasswordReset({ email: sent.email, redirectTo: routes.resetPassword });
+    setPending(false);
+    setAgain(true);
+  };
+
+  return (
+    <AuthCard
+      title={verify ? "Остался один шаг" : "Письмо отправлено"}
+      lead={
+        <>
+          {verify ? "Перейди по ссылке из письма — и профиль откроется." : "Если такой профиль есть, в письме будет ссылка на смену пароля."} Письмо ушло на{" "}
+          <span className="text-fg">{sent.email}</span>.
+        </>
+      }
+    >
+      <div className="mt-7 flex flex-col items-center gap-5">
+        <span aria-hidden className="relative inline-flex">
+          <span className="absolute -inset-4 rounded-full bg-accent-strong/20 blur-xl" />
+          <MailCheck size={40} className="relative text-accent-soft" />
+        </span>
+        <p className="text-center text-[13px] leading-relaxed text-dim">
+          Ссылка действует час. Письма нет? Проверь «Спам» и «Рассылки» — иногда оно приходит туда.
+        </p>
+
+        <div aria-live="polite" className="w-full">
+          {again && (
+            <p className="flex animate-fade-up items-center justify-center gap-2 rounded-2xl border border-teal/30 bg-teal/10 px-4 py-3 text-[13px] text-fg/90">
+              <Check size={15} className="shrink-0 text-teal" aria-hidden /> Отправили ещё раз
+            </p>
+          )}
+        </div>
+
+        <div className="flex w-full flex-col gap-2.5">
+          <button type="button" onClick={resend} disabled={pending || again} className="btn btn-glass btn-md h-12 w-full">
+            {pending ? "Отправляем…" : "Отправить письмо снова"}
+          </button>
+          <button type="button" onClick={onBack} className="rounded-md py-2 text-sm text-accent-soft transition hover:text-fg">
+            Вернуться к входу
+          </button>
+        </div>
+
+        <p className="text-center text-[13px] leading-relaxed text-dim">
+          Что-то не так? Напиши{" "}
+          <a href={site.telegram.personal.url} target="_blank" rel="noopener noreferrer" className="text-accent-soft underline-offset-2 hover:underline">
+            IDELUXE в Telegram
+          </a>
+          .
+        </p>
+      </div>
+    </AuthCard>
   );
 }
 
@@ -299,7 +453,7 @@ type FieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "placeholde
  * Input with a floating label: the label sits in the field like a placeholder and moves up when
  * the field is focused or filled (the `placeholder=" "` trick: :placeholder-shown = empty).
  */
-function Field({ id, label, icon: Icon, action, className, ref, ...input }: FieldProps) {
+export function Field({ id, label, icon: Icon, action, className, ref, ...input }: FieldProps) {
   return (
     <div className="group relative">
       <Icon

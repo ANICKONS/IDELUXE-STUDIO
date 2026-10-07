@@ -5,7 +5,8 @@ import { routes } from "@/config/routes";
  *  - "home": a huge planet rises from the bottom of the screen, the sun hidden right behind it;
  *  - "right" / "left" («Тарифы» / «Ресурсы»): the camera has flown round the planet, it hangs at
  *    the side of the screen and the sun lights a crescent facing the content;
- *  - "above" (login): the camera has risen over the planet, only open space is left.
+ *  - "above" (the auth screens: sign-in, confirming an address, a new password): the camera has
+ *    risen over the planet, only open space is left.
  * Switching pages flies the camera between the shots: the planet swoops along an arc (the camera
  * pulls back a little mid-way), the stars pan and space dust streams past.
  */
@@ -15,7 +16,8 @@ export type Shot = "home" | "right" | "left" | "above";
 export function shotFor(pathname: string): Shot {
   if (pathname.startsWith(routes.pricing)) return "right";
   if (pathname.startsWith(routes.resources)) return "left";
-  if (pathname.startsWith(routes.login)) return "above";
+  // Every auth screen keeps the same shot, so following a link from a letter doesn't move the camera
+  if (pathname.startsWith(routes.login) || pathname.startsWith(routes.verifyEmail) || pathname.startsWith(routes.resetPassword)) return "above";
   return "home";
 }
 

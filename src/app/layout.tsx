@@ -33,8 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // suppressHydrationWarning: the preloader's inline script sets data-boot before React loads.
     <html lang="ru" data-scroll-behavior="smooth" className={fontVariables} suppressHydrationWarning>
       <body>
-        {/* Auth: once connected, read the session on the server and pass it as `user` */}
-        <SiteShell user={null}>{children}</SiteShell>
+        <SiteShell>{children}</SiteShell>
       </body>
     </html>
   );

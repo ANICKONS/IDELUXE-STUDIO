@@ -6,14 +6,14 @@ import { Backdrop } from "@/features/backdrop";
 import { ChatWidget } from "@/features/chat";
 import { BootScript, Preloader } from "@/features/preloader";
 import { PageTransitions } from "@/features/transitions";
-import type { SessionUser } from "@/types/session";
 
 /**
  * Page chrome shared by every page: first-load preloader, space backdrop, floating header,
- * footer, assistant. If some future pages need another shell (e.g. a bare auth screen), move this
- * into a route group layout: app/(site)/layout.tsx (the preloader belongs to the root one).
+ * footer, assistant. Static: whoever is signed in, the header, footer and assistant learn it in
+ * the browser (lib/viewer.ts). If some future pages need another shell (e.g. a bare auth screen),
+ * move this into a route group layout: app/(site)/layout.tsx (the preloader belongs to the root one).
  */
-export function SiteShell({ user = null, children }: { user?: SessionUser | null; children: React.ReactNode }) {
+export function SiteShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       {/* Must come first in <body>: sets html[data-boot] before anything paints */}
@@ -28,7 +28,7 @@ export function SiteShell({ user = null, children }: { user?: SessionUser | null
       <Backdrop />
       <PageTransitions />
       <SpotlightTracker />
-      <Header user={user} />
+      <Header />
       {/* overflow-x-clip: decorative glows can't cause sideways scroll; unlike `hidden` it keeps position: sticky working */}
       <main id={MAIN_ID} className="relative overflow-x-clip">
         {children}

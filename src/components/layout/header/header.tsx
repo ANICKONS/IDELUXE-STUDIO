@@ -9,9 +9,9 @@ import { Avatar } from "@/components/ui/avatar";
 import { HashLink } from "@/components/layout/hash-link";
 import { MobileNav } from "@/components/layout/header/mobile-nav";
 import { TelegramMenu } from "@/components/layout/header/telegram-menu";
-import { mainNav, type NavItem } from "@/config/navigation";
+import { appNav, mainNav, type NavItem } from "@/config/navigation";
 import { anchorHref, landingAnchors, routes } from "@/config/routes";
-import type { SessionUser } from "@/types/session";
+import { useViewer } from "@/lib/viewer";
 import { cn } from "@/lib/utils";
 
 /** Scroll distance (px) where the bar detaches into a floating panel, with hysteresis to avoid flicker. */
@@ -42,10 +42,14 @@ function currentSection() {
 /**
  * At the top: a full-width glass bar. After scrolling it smoothly detaches into a floating
  * rounded panel. A glass pill slides to the active tab; the bottom edge shows scroll progress.
+ * Guests get the landing's menu and «Войти»; a signed-in account (lib/viewer.ts) gets the
+ * platform's menu and its avatar — "/" is its home then, not the landing.
  */
-export function Header({ user }: { user: SessionUser | null }) {
+export function Header() {
   const pathname = usePathname();
-  const isLanding = pathname === routes.home;
+  const user = useViewer().viewer?.user ?? null;
+  const nav = user ? appNav : mainNav;
+  const isLanding = pathname === routes.home && !user;
   const [open, setOpen] = useState(false);
   const [section, setSection] = useState<string>(landingAnchors.home);
 
@@ -109,10 +113,11 @@ export function Header({ user }: { user: SessionUser | null }) {
   }, [open]);
 
   const isActive = useCallback(
-    (item: NavItem) => (item.section ? isLanding && section === item.section : pathname.startsWith(item.href)),
+    (item: NavItem) =>
+      item.section ? isLanding && section === item.section : item.href === routes.home ? pathname === routes.home : pathname.startsWith(item.href),
     [isLanding, section, pathname],
   );
-  const activeHref = mainNav.find(isActive)?.href ?? null;
+  const activeHref = nav.find(isActive)?.href ?? null;
 
   /** Highlight a landing tab right away on click (the smooth scroll would pass other sections first). */
   const onNavClick = (item: NavItem) => {
@@ -176,7 +181,7 @@ export function Header({ user }: { user: SessionUser | null }) {
         >
           {/* Brand */}
           {/* The logo goes to the very top of the landing (the «Главная» tab goes to the editor) */}
-          <HashLink href={anchorHref(landingAnchors.top)} onClick={() => onNavClick(mainNav[0])} className="flex min-w-0 flex-1 shrink-0 items-center gap-2.5 rounded-lg lg:flex-none" aria-label="IDELUXE — на главную">
+          <HashLink href={user ? routes.home : anchorHref(landingAnchors.top)} onClick={() => onNavClick(nav[0])} className="flex min-w-0 flex-1 shrink-0 items-center gap-2.5 rounded-lg lg:flex-none" aria-label="IDELUXE — на главную">
             <LogoMark size={32} />
             <span className="font-display text-[15px] font-semibold tracking-[0.08em] text-fg">IDELUXE</span>
           </HashLink>
@@ -192,7 +197,7 @@ export function Header({ user }: { user: SessionUser | null }) {
               >
                 <span className="absolute -bottom-[4px] left-1/2 size-[7px] -translate-x-1/2 rotate-45 rounded-[1.5px] bg-accent shadow-[0_0_10px_1px_rgb(var(--rgb-accent)/0.6)]" />
               </span>
-              {mainNav.map((item) => {
+              {nav.map((item) => {
                 const active = item.href === activeHref;
                 return (
                   <li key={item.href} className="relative z-10">
@@ -253,7 +258,7 @@ export function Header({ user }: { user: SessionUser | null }) {
         </div>
       </div>
 
-      {open && <MobileNav items={mainNav} isActive={isActive} user={user} onNavigate={onNavClick} />}
+      {open && <MobileNav items={nav} isActive={isActive} user={user} onNavigate={onNavClick} />}
     </header>
   );
 }

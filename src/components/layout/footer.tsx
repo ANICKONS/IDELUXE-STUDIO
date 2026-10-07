@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { LogoMark, TelegramIcon } from "@/components/icons";
 import { HashLink } from "@/components/layout/hash-link";
+import { FooterNav } from "@/components/layout/footer-nav";
 import { FOOTER_ID } from "@/components/layout/layout-ids";
-import { footerContacts, footerNav, legalNav, type NavLink } from "@/config/navigation";
+import { footerContacts, footerNav, legalNav } from "@/config/navigation";
 import { anchorHref, landingAnchors } from "@/config/routes";
 import { site } from "@/config/site";
 
@@ -26,7 +27,7 @@ export function Footer() {
           </div>
 
           {footerNav.map((column) => (
-            <FooterColumn key={column.title} title={column.title} links={column.links} />
+            <FooterNav key={column.title} title={column.title} links={column.links} guestOnly={column.guestOnly} />
           ))}
 
           <div>
@@ -70,22 +71,5 @@ export function Footer() {
         </p>
       </div>
     </footer>
-  );
-}
-
-function FooterColumn({ title, links }: { title: string; links: NavLink[] }) {
-  return (
-    <div>
-      <h2 className="font-mono text-[11px] tracking-[0.18em] text-dim uppercase">{title}</h2>
-      <ul className="mt-4 space-y-2.5">
-        {links.map((l) => (
-          <li key={l.href}>
-            <HashLink href={l.href} className="text-sm text-muted transition hover:text-fg">
-              {l.label}
-            </HashLink>
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }

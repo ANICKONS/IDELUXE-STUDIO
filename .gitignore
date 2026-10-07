@@ -12,6 +12,8 @@ next-env.d.ts
 # env (secrets)
 .env
 .env*.local
+# accounts database (SQLite, see DATABASE_PATH): personal data, never commit
+/data/
 # misc
 .DS_Store
 *.pem
