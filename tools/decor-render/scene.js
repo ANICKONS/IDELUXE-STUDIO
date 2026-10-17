@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { ParametricGeometry } from "three/addons/geometries/ParametricGeometry.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
+import { newYearObjects } from "./new-year.js"; // seasonal objects (src/features/new-year)
 
 /** Square render size (supersampled) and the longest side of the saved image, px. */
 const RENDER = 1400;
@@ -340,6 +341,7 @@ const objects = {
     return pose(group, 0.32, -0.5, 0.18);
   },
 };
+Object.assign(objects, newYearObjects({ THREE, M, RoundedBoxGeometry, extrude, roundedPolygon, mesh, pose }));
 
 /* ───────────── Capture ───────────── */
 

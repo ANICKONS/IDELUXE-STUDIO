@@ -126,6 +126,7 @@ uniform vec3 uPlanet;   // centre x, centre y (viewport CSS px, y down), radius
 uniform mat3 uGround;   // view → planet body (camera orbit and spin included)
 uniform mat3 uSky;      // view → cloud layer (spins a little faster)
 uniform vec3 uSun;      // direction to the sun, view space (behind the planet; moves with the camera)
+uniform float uSnow;    // 0–1: winter snow cover on the land (a seasonal look, planet.ts → PlanetLook)
 const float PI = 3.14159265;
 ${HASH}
 
@@ -206,9 +207,16 @@ void main() {
     vec3 lowland = mix(vec3(0.12, 0.1, 0.075), vec3(0.045, 0.062, 0.05), smoothstep(0.15, 0.55, lat));
     vec3 ground = mix(lowland, vec3(0.17, 0.155, 0.14), elev);
     float ice = smoothstep(0.84, 0.93, lat + (elev - 0.4) * 0.06);
+    // Winter (uSnow): snow over the land from the middle latitudes up, reaching further down over
+    // the highlands, and on every mountain range. Cities keep shining through it
+    float snow = uSnow * land * max(smoothstep(0.5, 0.68, lat + (elev - 0.4) * 0.35), smoothstep(0.55, 0.78, elev));
     vec3 ocean = vec3(0.012, 0.02, 0.04);
     vec3 albedo = mix(mix(ocean, ground, land), vec3(0.5, 0.53, 0.58), ice * 0.9);
+    // (a little darker than the polar ice: the planet must stay dark under the text)
+    albedo = mix(albedo, vec3(0.4, 0.44, 0.5), snow * 0.85);
     col = albedo * (skyglow + 0.75 * day);
+    // Snow on the night side catches the faint skyglow: the continents show as cold pale shapes
+    col += snow * (1.0 - day) * vec3(0.01, 0.014, 0.024);
     col += dusk * vec3(0.62, 0.32, 0.14) * 0.1;             // amber twilight along the terminator
 
     vec3 hv = normalize(uSun + vec3(0.0, 0.0, 1.0));        // sun glint on the oceans
@@ -220,7 +228,8 @@ void main() {
     // City lights (baked into the map): warm sodium glow, the brightest centres whiter; dimmed
     // under clouds and fading out towards the limb, where the map gets squeezed
     vec3 cityCol = mix(vec3(1.0, 0.68, 0.36), vec3(1.0, 0.88, 0.7), smoothstep(0.45, 0.9, g.b));
-    col += cityCol * night * (1.0 - clouds * 0.85) * (1.0 - ice) * g.b * 0.55 * smoothstep(0.08, 0.35, n.z);
+    // (fresh snow reflects them: snowy towns glow a little brighter)
+    col += cityCol * night * (1.0 - clouds * 0.85) * (1.0 - ice) * (1.0 + snow * 0.35) * g.b * 0.55 * smoothstep(0.08, 0.35, n.z);
 
     // Near the limb the surface dissolves into the lit atmosphere
     float rim = pow(1.0 - n.z, 5.0);

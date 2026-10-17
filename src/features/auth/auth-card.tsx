@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { LogoMark } from "@/components/icons";
+import { NewYearSnowCap } from "@/features/new-year";
 
 /**
  * The glass card every auth screen lives in: sign-in and sign-up (auth-form.tsx), confirming an
@@ -26,6 +27,8 @@ export function AuthCard({
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-44 rounded-t-[inherit] bg-[radial-gradient(70%_100%_at_50%_0%,rgb(var(--rgb-accent)/0.1),transparent)]"
       />
       <div aria-hidden className="pointer-events-none absolute inset-x-14 -top-px h-px bg-gradient-to-r from-transparent via-accent-soft/70 to-transparent" />
+      {/* New Year theme (features/new-year): snow on the top edge */}
+      <NewYearSnowCap variant="draped" radius={32} lumps={11} seed={3} />
 
       <div className="text-center">
         <div className="relative mx-auto w-fit">

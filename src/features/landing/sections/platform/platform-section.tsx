@@ -3,6 +3,7 @@ import { ArrowUpRight, Clapperboard, Infinity as InfinityIcon, Package, Sparkles
 import { SectionHeading } from "@/components/ui/section-heading";
 import { AppTile } from "@/components/ui/app-tile";
 import { OpenChatButton } from "@/features/chat";
+import { NewYearSnowCap } from "@/features/new-year";
 import { landingAnchors, learnSectionHref, routes } from "@/config/routes";
 import { site } from "@/config/site";
 import { software } from "@/content/landing";
@@ -28,6 +29,8 @@ export function PlatformSection() {
         <div className="mt-14 grid gap-5 md:grid-cols-6">
           {/* Resources */}
           <BentoCard className="md:col-span-4" icon={<Package size={22} />} title="Программы, плагины, расширения" plan="LITE · PRO">
+            {/* New Year theme (features/new-year): icicles along the card's top edge */}
+            <NewYearSnowCap variant="icicles" lumps={22} seed={15} />
             <p>Прямые ссылки на программы и плагины, проверенные расширения и скрипты — с инструкциями по установке.</p>
             {/* Programs taught in the pack: name and purpose beside the icon. Two per row, so both
                 lines fit without cutting */}

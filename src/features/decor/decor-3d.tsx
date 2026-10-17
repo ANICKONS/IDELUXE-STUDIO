@@ -40,8 +40,15 @@ const NEAR_BLUR = 16;
 /** Parallax travel per screen (px) for one unit of depth away from the focal plane. */
 const PARALLAX = 230;
 
+/**
+ * A pre-rendered object outside the built-in set (e.g. seasonal ones, features/new-year): its URL
+ * (with a ?v= cache buster of its own) and intrinsic size, px.
+ */
+export type DecorAsset = { src: string; width: number; height: number };
+
 export type DecorItem = {
-  name: DecorName;
+  /** One of the built-in objects, or any other pre-rendered image. */
+  name: DecorName | DecorAsset;
   side: "left" | "right";
   /** Position inside the container (px or %). */
   top: string;
@@ -234,7 +241,7 @@ export function Decor3D({ items, className }: { items: DecorItem[]; className?: 
   const layer = (list: DecorItem[], isFront: boolean) => (
     <div aria-hidden data-decor className={cn("pointer-events-none absolute inset-0 select-none", isFront ? "z-20 hidden xl:block" : className)}>
       {list.map((item, i) => (
-        <DecorObject key={`${item.name}-${i}`} item={item} index={i + (isFront ? back.length : 0)} front={isFront} anchorRef={anchorRef} />
+        <DecorObject key={`${typeof item.name === "string" ? item.name : item.name.src}-${i}`} item={item} index={i + (isFront ? back.length : 0)} front={isFront} anchorRef={anchorRef} />
       ))}
     </div>
   );
@@ -258,7 +265,10 @@ function DecorObject({
   front: boolean;
   anchorRef: (el: HTMLDivElement | null) => void;
 }) {
-  const [w, h] = INTRINSIC[item.name];
+  const { src, width: w, height: h } =
+    typeof item.name === "string"
+      ? { src: `/decor/${item.name}.webp?v=${DECOR_VERSION}`, width: INTRINSIC[item.name][0], height: INTRINSIC[item.name][1] }
+      : item.name;
   const left = item.side === "left";
   const blur = item.blur ?? focusBlur(item.depth);
   // Atmospheric depth: far objects are dimmer and greyer. Foreground ones are out of the light
@@ -332,7 +342,7 @@ function DecorObject({
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- small pre-rendered decor, sized by CSS */}
             <img
-              src={`/decor/${item.name}.webp?v=${DECOR_VERSION}`}
+              src={src}
               alt=""
               width={w}
               height={h}

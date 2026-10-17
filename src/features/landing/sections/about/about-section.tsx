@@ -3,6 +3,7 @@ import { ArrowRight, Briefcase, Headphones, Play, Wrench } from "lucide-react";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { PackCard } from "@/features/pack/pack-card";
 import { AboutScreen } from "@/features/landing/sections/about/about-screen";
+import { NewYearSnowCap } from "@/features/new-year";
 import { ABOUT_REEL_ORIGIN, ReelButton } from "@/features/reel";
 import { landingAnchors, routes } from "@/config/routes";
 import { approachPillars, clients } from "@/content/landing";
@@ -55,7 +56,7 @@ export function AboutSection() {
 
         {/* On tall screens the cards sit at the bottom of the screen (mt-auto), never closer than pt-12 */}
         <div className="mt-16 grid grid-cols-1 gap-6 lg:mt-auto lg:grid-cols-12 lg:pt-12">
-          <div className="flex flex-col lg:col-span-5 lg:col-start-8 lg:row-start-1">
+          <div className="relative flex flex-col lg:col-span-5 lg:col-start-8 lg:row-start-1">
             <PackCard
               className="reveal flex-1"
               footer={
@@ -64,6 +65,9 @@ export function AboutSection() {
                 </Link>
               }
             />
+            {/* New Year theme (features/new-year): snow draped over the card's corners. The card fills
+                this column, so the overlay has its box and the same scroll entrance (reveal) */}
+            <NewYearSnowCap variant="draped" radius={32} lumps={12} seed={21} overlay className="reveal" />
           </div>
 
           <div className="flex min-w-0 flex-col gap-6 lg:col-span-7 lg:col-start-1 lg:row-start-1">

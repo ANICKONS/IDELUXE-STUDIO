@@ -13,17 +13,19 @@ export type NavItem = {
 export type NavLink = { label: string; href: string };
 
 /**
- * Header menu. «Главная», «Обо мне», «Платформа», «FAQ» are landing anchors; «Ресурсы», «Тарифы» are pages.
+ * Guest menu (the landing). «Главная», «Обо мне», «Для кого», «Платформа», «FAQ» are landing
+ * anchors; «Тарифы» is a page. «Ресурсы» and «Туториалы» are for signed-in accounts (appNav).
  * «Главная» leads to the very top: the header is in its full state and the whole first screen
- * (headline, editor, numbers) is visible.
+ * (headline, editor, numbers) is visible. Each anchored block takes a whole screen on desktop
+ * (`section-screen`), so a jump shows only that block; FAQ runs on into the final CTA.
  */
 export const mainNav: NavItem[] = [
   { label: "Главная", href: anchorHref(landingAnchors.top), section: landingAnchors.home },
   // IDELUXE is one person, so the block is «Обо мне»
   { label: "Обо мне", href: anchorHref(landingAnchors.about), section: landingAnchors.about },
+  { label: "Для кого", href: anchorHref(landingAnchors.audience), section: landingAnchors.audience },
   { label: "Платформа", href: anchorHref(landingAnchors.platform), section: landingAnchors.platform },
   { label: "FAQ", href: anchorHref(landingAnchors.faq), section: landingAnchors.faq },
-  { label: "Ресурсы", href: routes.resources },
   { label: "Тарифы", href: routes.pricing, highlight: true },
 ];
 

@@ -6,6 +6,7 @@ import { FOOTER_ID } from "@/components/layout/layout-ids";
 import { footerContacts, footerNav, legalNav } from "@/config/navigation";
 import { anchorHref, landingAnchors } from "@/config/routes";
 import { site } from "@/config/site";
+import { NewYearSnowCap, NewYearStockings } from "@/features/new-year";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -15,6 +16,9 @@ export function Footer() {
     // bottom keeps the assistant's launcher (fixed, bottom-right) off the footer's text
     <footer id={FOOTER_ID} className="relative mt-24 px-3 pb-24 sm:px-4 min-[1330px]:pb-6">
       <div className="glass mx-auto max-w-6xl rounded-[2rem] px-6 py-10 sm:px-10">
+        {/* New Year theme (features/new-year): the card as a mantelpiece, snow on top, two stockings on its edge */}
+        <NewYearStockings className="right-8 sm:right-12" />
+        <NewYearSnowCap variant="soft" lumps={36} seed={11} />
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
           <div>
             <HashLink href={anchorHref(landingAnchors.top)} className="inline-flex items-center gap-2.5">

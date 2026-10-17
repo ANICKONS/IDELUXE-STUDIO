@@ -1,0 +1,47 @@
+/* ───────────────────────── New Year ornaments ─────────────────────────
+   Stockings (stockings.tsx) swing a little on their ribbons; glints (snow-cap.tsx) flash on the
+   snow now and then. Only `transform` / `opacity` animate. With reduced motion
+   (styles/effects.css) the stockings hang still and the glints stay out. */
+
+.ny-stocking {
+  display: block;
+  transform-origin: 50% 0;
+  animation: ny-swing var(--d, 5.5s) ease-in-out var(--delay, 0s) infinite;
+}
+
+@keyframes ny-swing {
+  0%,
+  100% {
+    transform: rotate(calc(var(--a, 3deg) * -1));
+  }
+  50% {
+    transform: rotate(var(--a, 3deg));
+  }
+}
+
+/* A four-point glint, centred on (left, top) */
+.ny-glint {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  background:
+    linear-gradient(90deg, transparent 0 40%, #fff 50%, transparent 60% 100%) 50% 50% / 100% 1.5px no-repeat,
+    linear-gradient(0deg, transparent 0 40%, #fff 50%, transparent 60% 100%) 50% 50% / 1.5px 100% no-repeat,
+    radial-gradient(circle, #fff 0 0.8px, rgb(255 255 255 / 0.5) 1.4px, transparent 2.6px);
+  opacity: 0;
+  animation: ny-glint var(--d, 6s) ease-in-out var(--delay, 0s) infinite;
+}
+
+@keyframes ny-glint {
+  0%,
+  78%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(0deg);
+  }
+  86% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+}

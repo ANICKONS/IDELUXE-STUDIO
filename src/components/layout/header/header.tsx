@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Menu, Star, X } from "lucide-react";
 import { LogoMark } from "@/components/icons";
 import { Avatar } from "@/components/ui/avatar";
@@ -10,6 +10,7 @@ import { HashLink } from "@/components/layout/hash-link";
 import { MobileNav } from "@/components/layout/header/mobile-nav";
 import { TelegramMenu } from "@/components/layout/header/telegram-menu";
 import { appNav, mainNav, type NavItem } from "@/config/navigation";
+import { NewYearGarland } from "@/features/new-year";
 import { anchorHref, landingAnchors, routes } from "@/config/routes";
 import { useViewer } from "@/lib/viewer";
 import { cn } from "@/lib/utils";
@@ -20,19 +21,17 @@ const FLOAT_OFF = 16;
 /** A section counts as "current" once its top passes this share of the viewport height. */
 const PROBE = 0.38;
 
-const navSections = new Set(mainNav.flatMap((n) => (n.section ? [n.section] : [])));
-
 /**
  * Landing sections without their own menu item belong to the nearest menu section above them
- * (audience → «Обо мне», the final CTA → «FAQ»), so some tab is always highlighted. The hero
- * section has no menu id: everything above «Обо мне» counts as «Главная».
+ * (the final CTA → «FAQ»), so some tab is always highlighted. The hero section has no menu id:
+ * everything above «Обо мне» counts as «Главная». `menu`: the ids the menu links to.
  */
-function currentSection() {
+function currentSection(menu: ReadonlySet<string>) {
   const probe = window.innerHeight * PROBE;
   let owner: string = landingAnchors.home;
   let current: string = landingAnchors.home;
   for (const el of document.querySelectorAll<HTMLElement>("main section[id]")) {
-    if (navSections.has(el.id)) owner = el.id;
+    if (menu.has(el.id)) owner = el.id;
     if (el.getBoundingClientRect().top > probe) break;
     current = owner;
   }
@@ -49,6 +48,9 @@ export function Header() {
   const pathname = usePathname();
   const user = useViewer().viewer?.user ?? null;
   const nav = user ? appNav : mainNav;
+  // The landing blocks the menu links to. Derived from the menu itself and a dependency of the
+  // scroll listener below, so an edited menu (hot reload) never leaves it with a stale list
+  const menuSections = useMemo(() => new Set(nav.flatMap((n) => (n.section ? [n.section] : []))), [nav]);
   const isLanding = pathname === routes.home && !user;
   const [open, setOpen] = useState(false);
   const [section, setSection] = useState<string>(landingAnchors.home);
@@ -72,7 +74,7 @@ export function Header() {
         const max = document.documentElement.scrollHeight - window.innerHeight;
         header.style.setProperty("--progress", String(max > 0 ? Math.min(1, Math.max(0, y / max)) : 0));
       }
-      if (isLanding && performance.now() > lockUntilRef.current) setSection(currentSection());
+      if (isLanding && performance.now() > lockUntilRef.current) setSection(currentSection(menuSections));
     };
     const onScroll = () => {
       cancelAnimationFrame(frame);
@@ -92,7 +94,7 @@ export function Header() {
       window.removeEventListener("scrollend", onScrollEnd);
       window.removeEventListener("resize", onScroll);
     };
-  }, [isLanding]);
+  }, [isLanding, menuSections]);
 
   // Mobile sheet: Escape closes it, page behind doesn't scroll, desktop width closes it.
   useEffect(() => {
@@ -256,6 +258,9 @@ export function Header() {
             <div className="absolute -top-[4px] left-0 h-[9px] w-px bg-accent-soft shadow-[0_0_8px_1px_rgb(var(--rgb-accent)/0.7)]" />
           </div>
         </div>
+
+        {/* New Year theme (features/new-year): string lights hanging from the bottom edge */}
+        <NewYearGarland />
       </div>
 
       {open && <MobileNav items={nav} isActive={isActive} user={user} onNavigate={onNavClick} />}

@@ -1,4 +1,5 @@
 import type { SVGProps } from "react";
+import { NewYearLogoSnow } from "@/features/new-year";
 import { cn } from "@/lib/utils";
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };
@@ -54,6 +55,8 @@ export function LogoMark({ size = 32, className, ...props }: IconProps) {
       <path d={IDX_MARK.gloss} fill="#fff" fillOpacity=".28" />
       <path d={IDX_MARK.counter} fill="#08090b" />
       <path d={IDX_MARK.x} stroke={`url(#${id}-x)`} strokeWidth="2.3" strokeLinecap="round" />
+      {/* New Year theme (features/new-year): snow caps on the mark */}
+      <NewYearLogoSnow />
     </svg>
   );
 }

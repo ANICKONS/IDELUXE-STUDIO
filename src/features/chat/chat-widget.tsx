@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, ArrowUp, Lock, RotateCcw, Sparkles, Square, X } from "lucide-react";
 import { Markdown } from "@/features/chat/markdown";
 import { OPEN_CHAT_EVENT, type OpenChatDetail } from "@/features/chat/events";
+import { NewYearSantaHat } from "@/features/new-year";
 import { routes } from "@/config/routes";
 import { can } from "@/lib/access-rules";
 import { useViewer } from "@/lib/viewer";
@@ -329,6 +330,8 @@ export function ChatWidget() {
         {/* Ivory key, like the primary buttons */}
         <span className="absolute inset-1.5 -z-10 rounded-full bg-[linear-gradient(180deg,#fdfbf7,#ddd5c6)] opacity-95 shadow-[inset_0_1px_0_#fff,inset_0_-3px_8px_rgb(150_125_85/0.22)] transition group-hover:opacity-100" />
         {open ? <X size={22} className="text-ink-950" /> : <Sparkles size={22} className="text-ink-950" />}
+        {/* New Year theme (features/new-year): a Santa hat, tilted on the top-right of the button */}
+        <NewYearSantaHat className="absolute -top-[17px] left-[20px] w-[36px] rotate-[22deg]" />
         {!open && (
           <span className="pointer-events-none absolute right-full mr-3 hidden rounded-full glass-soft bg-ink-900/80 px-3 py-1.5 text-xs whitespace-nowrap text-muted opacity-0 transition group-hover:opacity-100 md:block">
             Вопрос по монтажу?

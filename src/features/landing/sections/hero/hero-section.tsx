@@ -3,6 +3,7 @@ import { EditorMock } from "@/features/landing/sections/hero/editor/editor-mock"
 import { StatCounter } from "@/features/landing/sections/hero/stat-counter";
 import { heroDecor } from "@/features/landing/decor";
 import { Decor3D } from "@/features/decor";
+import { NewYearSnowCap } from "@/features/new-year";
 import { landingAnchors } from "@/config/routes";
 import { packStats } from "@/content/pack";
 
@@ -53,8 +54,11 @@ export function HeroSection() {
           </div>
           {/* The showreel plays in the program monitor; the player flies out of it.
               hero-tilt: stands tilted back on the platform, straightens up as you scroll to it. */}
-          <div className="hero-tilt">
+          <div className="hero-tilt relative">
             <EditorMock className="arrive [--i:3]" />
+            {/* New Year theme (features/new-year): snow on the window's top edge (the window clips its
+                overflow, so the drift lies over it in a box of its size and comes in with it) */}
+            <NewYearSnowCap variant="soft" lumps={34} seed={7} from="1.5rem" to="1.5rem" overlay className="arrive [--i:3]" />
           </div>
         </div>
 

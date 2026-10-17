@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import { TelegramIcon } from "@/components/icons";
 import { site } from "@/config/site";
+import { NewYearSnowCap } from "@/features/new-year";
 import {
   fullSaving,
   planOrder,
@@ -94,6 +95,8 @@ function PlanCard({ plan, billing, animate, index }: { plan: Plan; billing: Bill
       className={cn("glass arrive relative flex w-full flex-col rounded-[2rem] p-6 pt-7", featured && "plan-featured")}
       style={{ "--i": index } as React.CSSProperties}
     >
+      {/* New Year theme (features/new-year): snow on the best plan's top edge, right of its badge */}
+      {featured && <NewYearSnowCap variant="heap" side="right" radius={32} lumps={4} seed={5} from="58%" />}
       {plan.badge && (
         <span
           className={cn(

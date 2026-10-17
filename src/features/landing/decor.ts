@@ -1,4 +1,5 @@
 import type { DecorItem } from "@/features/decor/decor-3d";
+import { newYearHeroDecor } from "@/features/new-year";
 
 /**
  * The only 3D objects on the site: four of them float around the hero, beside the headline and in
@@ -6,9 +7,12 @@ import type { DecorItem } from "@/features/decor/decor-3d";
  * plane; lower — further back, small, soft and dim. `x` — px from the screen edge, `inset` — how far
  * the object moves towards the content on wide screens, `top` — share of the hero's height.
  */
-export const heroDecor: DecorItem[] = [
+const defaultHeroDecor: DecorItem[] = [
   { name: "keyframe", side: "left", top: "12%", x: 40, size: 150, depth: 0.6, rotate: -12, inset: 0.5, mobile: true },
   { name: "sparkle", side: "right", top: "6%", x: 70, size: 110, depth: 0.6, rotate: 10, inset: 0.5 },
   { name: "play", side: "right", top: "30%", x: 12, size: 120, depth: 0.6, rotate: 8, inset: 0.6, mobile: true },
   { name: "cube", side: "left", top: "31%", x: 210, size: 80, depth: 0.28, rotate: 18, inset: 0.8 },
 ];
+
+/** New Year theme (features/new-year): its own four objects in the same places while it's on. */
+export const heroDecor = newYearHeroDecor ?? defaultHeroDecor;

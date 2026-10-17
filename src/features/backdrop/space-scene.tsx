@@ -14,6 +14,7 @@ import {
 } from "@/features/backdrop/camera";
 import { createPlanet, drawPlanetFallback } from "@/features/backdrop/planet";
 import { createStarfield } from "@/features/backdrop/starfield";
+import { emitBackdropFrame, type BackdropFrame } from "@/lib/backdrop-frame";
 import { markBackdropReady, readBootPhase, subscribeBoot } from "@/lib/boot";
 import { subscribeLeave } from "@/lib/page-leave";
 import { holdArrival } from "@/lib/transit-hold";
@@ -62,7 +63,8 @@ const IDLE_FPS = 30;
 /** Refreshes per rendered frame for a target rate (a little slack for a slightly fast display). */
 const pace = (refresh: number, fps: number) => Math.max(1, Math.floor(refresh / fps + 0.2));
 
-export function SpaceScene() {
+/** `snow`: 0–1, snow cover on the planet's land (a seasonal look, planet.ts). */
+export function SpaceScene({ snow = 0 }: { snow?: number }) {
   const skyRef = useRef<HTMLCanvasElement>(null);
   const planetRef = useRef<HTMLCanvasElement>(null);
   const pathname = usePathname();
@@ -79,7 +81,9 @@ export function SpaceScene() {
     const finePointer = window.matchMedia("(pointer: fine)").matches;
     const stars = createStarfield();
     // null → no WebGL: the sky canvas draws a flat silhouette instead
-    const planet = createPlanet(planetCanvas);
+    const planet = createPlanet(planetCanvas, { snow });
+    // Frame clock for layers drawn in step with the backdrop (lib/backdrop-frame.ts); one object, reused
+    const tick: BackdropFrame = { time: 0, dt: 0, width: 0, height: 0, dpr: 1, drift: 0, panX: 0, panY: 0, planetX: 0, planetY: 0, planetR: 0, spin: 0, yaw: 0, pitch: 0, still: true };
 
     let w = 0;
     let h = 0;
@@ -200,6 +204,23 @@ export function SpaceScene() {
         drawPlanetFallback(ctx, view);
         markBackdropReady();
       } else if (planet.draw(view, still)) markBackdropReady();
+
+      tick.time = time;
+      tick.dt = dt;
+      tick.width = w;
+      tick.height = h;
+      tick.dpr = dpr;
+      tick.drift = drift;
+      tick.panX = pose.panX - mouseX * 14;
+      tick.panY = pose.panY;
+      tick.planetX = view.x;
+      tick.planetY = view.y;
+      tick.planetR = view.r;
+      tick.spin = view.spin;
+      tick.yaw = view.yaw;
+      tick.pitch = view.pitch;
+      tick.still = still;
+      emitBackdropFrame(tick);
 
       if (running) frame = requestAnimationFrame(render);
     };
@@ -327,7 +348,8 @@ export function SpaceScene() {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("pointermove", onPointer);
     };
-  }, []);
+    // `snow` is fixed for the build (a seasonal setting): the scene never actually restarts for it
+  }, [snow]);
 
   // Page switches move the camera. A layout effect: the new page is already in the DOM but not yet
   // painted, so its entrance gets the flight's timing from its very first frame

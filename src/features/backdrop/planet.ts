@@ -144,7 +144,7 @@ function setup(gl: WebGLRenderingContext, small: boolean): Resources {
   const draw = program(gl, PLANET_FRAG);
   const bake = program(gl, SURFACE_FRAG);
   const u: Resources["u"] = {};
-  for (const name of ["uMap", "uTexel", "uCanvas", "uScale", "uPlanet", "uGround", "uSky", "uSun"]) u[name] = gl.getUniformLocation(draw, name);
+  for (const name of ["uMap", "uTexel", "uCanvas", "uScale", "uPlanet", "uGround", "uSky", "uSun", "uSnow"]) u[name] = gl.getUniformLocation(draw, name);
   u.uSize = gl.getUniformLocation(bake, "uSize");
 
   gl.disable(gl.DEPTH_TEST);
@@ -186,7 +186,12 @@ function bakeStrips(gl: WebGLRenderingContext, res: Resources, all: boolean) {
   return true;
 }
 
-export function createPlanet(canvas: HTMLCanvasElement): Planet | null {
+export type PlanetLook = {
+  /** 0–1: winter snow over the land of the higher latitudes and on the mountains (seasonal). */
+  snow?: number;
+};
+
+export function createPlanet(canvas: HTMLCanvasElement, { snow = 0 }: PlanetLook = {}): Planet | null {
   const gl = canvas.getContext("webgl", {
     alpha: true,
     premultipliedAlpha: true,
@@ -275,6 +280,7 @@ export function createPlanet(canvas: HTMLCanvasElement): Planet | null {
       gl.uniformMatrix3fv(u.uGround, false, columnMajor(mul(mul(rotY(view.spin), AXIS), cam)));
       gl.uniformMatrix3fv(u.uSky, false, columnMajor(mul(mul(rotY(view.clouds), AXIS), cam)));
       gl.uniform3f(u.uSun, sun[0], sun[1], sun[2]);
+      gl.uniform1f(u.uSnow, snow);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.disable(gl.SCISSOR_TEST);
       // Fade in once the first real frame is on screen
@@ -290,6 +296,32 @@ export function createPlanet(canvas: HTMLCanvasElement): Planet | null {
       if (res && !gl.isContextLost()) release(gl, res);
       res = null;
     },
+  };
+}
+
+/** A point fixed on the surface: latitude and longitude, rad, as on the surface map (planet-shaders.ts). */
+export type SurfacePoint = { lat: number; lon: number };
+
+/**
+ * The planet's frame right now, for layers drawn over it in step with its spin and the camera (the
+ * seasonal trees, features/new-year). Directions are in view space: x right, y up, z towards the
+ * camera; a surface point's direction is also its normal, its screen position is the disc centre
+ * + radius × (x, −y). The same matrices as the shader's uGround, so things stay glued to the map.
+ */
+export function planetGeometry(view: Pick<PlanetView, "spin" | "yaw" | "pitch">) {
+  const cam = orbit(view.yaw, view.pitch);
+  const toBody = mul(mul(rotY(view.spin), AXIS), cam);
+  const toView = transpose(toBody);
+  return {
+    /** Where a surface point is now. */
+    surface: ({ lat, lon }: SurfacePoint): Vec3 => apply(toView, [Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)]),
+    /** The surface point seen in a view direction (unit vector on the visible side). */
+    locate: (v: Vec3): SurfacePoint => {
+      const b = apply(toBody, v);
+      return { lat: Math.asin(Math.min(1, Math.max(-1, b[1]))), lon: Math.atan2(b[2], b[0]) };
+    },
+    /** Direction to the sun. */
+    sun: apply(transpose(cam), SUN),
   };
 }
 

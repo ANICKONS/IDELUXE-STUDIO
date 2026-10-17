@@ -60,7 +60,10 @@ try {
   for (const name of names) {
     const t = Date.now();
     const r = await page.evaluate((n) => window.decor.render(n), name);
-    await writeFile(join(outDir, `${name}.webp`), Buffer.from(r.webp, "base64"));
+    // Names may carry a folder ("new-year/star" → public/decor/new-year/star.webp)
+    const file = join(outDir, `${name}.webp`);
+    await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, Buffer.from(r.webp, "base64"));
     sizes[name] = [r.width, r.height];
     console.log(`${name.padEnd(10)} ${r.width}×${r.height}  ${(r.bytes / 1024).toFixed(1)} KB  ${Date.now() - t} ms`);
   }

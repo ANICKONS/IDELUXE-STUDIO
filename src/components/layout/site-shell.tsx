@@ -4,6 +4,7 @@ import { MAIN_ID } from "@/components/layout/layout-ids";
 import { SpotlightTracker } from "@/components/ui/spotlight-tracker";
 import { Backdrop } from "@/features/backdrop";
 import { ChatWidget } from "@/features/chat";
+import { NewYearSnowfall, newYearPlanetSnow } from "@/features/new-year";
 import { BootScript, Preloader } from "@/features/preloader";
 import { PageTransitions } from "@/features/transitions";
 
@@ -25,7 +26,10 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       >
         Перейти к содержимому
       </a>
-      <Backdrop />
+      {/* New Year theme (features/new-year): a snowy planet with fir trees on it, snowfall over it */}
+      <Backdrop snow={newYearPlanetSnow}>
+        <NewYearSnowfall />
+      </Backdrop>
       <PageTransitions />
       <SpotlightTracker />
       <Header />

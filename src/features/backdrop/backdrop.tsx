@@ -7,8 +7,10 @@ const noise =
  * Fixed backdrop: deep graphite space. Stars twinkle in the sky and a huge planet rises from the
  * bottom of the screen, lit from behind (SpaceScene); the site's panels and cards float in front
  * of it. Film grain on top.
+ * `snow`: 0–1, snow cover on the planet's land (a seasonal look; the New Year theme sets it).
+ * `children`: extra layers drawn over the planet, under the vignette and the grain (the seasonal snowfall).
  */
-export function Backdrop() {
+export function Backdrop({ snow = 0, children }: { snow?: number; children?: React.ReactNode }) {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <div
@@ -21,7 +23,10 @@ export function Backdrop() {
         }}
       />
 
-      <SpaceScene />
+      <SpaceScene snow={snow} />
+
+      {/* Extra layers over the planet (absolute, full size), still under the vignette and the grain */}
+      {children}
 
       {/* Vignette: the edges of space fall into darkness */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_75%_70%_at_50%_55%,transparent_55%,rgb(2_2_3/0.7)_100%)]" />
