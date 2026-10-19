@@ -45,35 +45,6 @@ export const faq: { q: string; a: string }[] = [
   },
 ];
 
-/**
- * «Для кого подойдёт». `icon` is mapped to a lucide icon in audience-section.tsx. `points`: what on
- * the platform is for them (keep to what the plans really open, content/plans.ts); `start`: the
- * plan to begin with.
- */
-export const audience = [
-  {
-    icon: "sprout",
-    title: "Новичкам",
-    text: "Хочешь сделать первый эффектный ролик? Разборы идут шаг за шагом: повторяешь за IDELUXE — и эффект готов.",
-    points: ["Вводные туториалы — бесплатно", "Смотришь в любом порядке"],
-    start: "Бесплатный аккаунт",
-  },
-  {
-    icon: "phone",
-    title: "Блогерам и авторам",
-    text: "Монтируешь ролики, Reels и шортсы сам? Находишь нужный приём в разделе и сразу используешь, без часовых лекций.",
-    points: ["Переходы, цвет, экспорт под площадки", "ИИ-ассистент подскажет настройки"],
-    start: "IDX PRO",
-  },
-  {
-    icon: "wand",
-    title: "Монтажёрам с опытом",
-    text: "База уже есть, нужны свежие эффекты, моушн и звук — и готовые материалы из пака вместо поисков по всему интернету.",
-    points: ["Футажи, пресеты и звуки навсегда", "Плагины с инструкциями"],
-    start: "IDX PACK или FULL",
-  },
-] as const;
-
 /** «Мой подход» in «Обо мне». `icon` is mapped in about-section.tsx. */
 export const approachPillars = [
   {

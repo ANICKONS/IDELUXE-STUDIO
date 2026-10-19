@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Dashboard } from "@/features/account";
 import { LandingPage } from "@/features/landing";
+import { learnStats } from "@/features/learn/stats.server";
 import { getViewer } from "@/lib/server/session";
 
 /*
@@ -15,5 +16,5 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AccountHomePage() {
   const viewer = await getViewer();
-  return viewer ? <Dashboard viewer={viewer} /> : <LandingPage />;
+  return viewer ? <Dashboard viewer={viewer} learn={learnStats(viewer.user.id, viewer.access)} /> : <LandingPage />;
 }

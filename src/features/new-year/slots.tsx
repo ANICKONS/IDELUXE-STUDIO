@@ -30,9 +30,9 @@ export function NewYearLogoSnow() {
 
 /**
  * Snow on a panel's top edge (snow-cap.tsx), one panel per screen, a different look on neighbouring
- * screens: a soft drift on the hero editor, draped over the IDX PACK card's corners, a heap blown
- * onto the audience card, icicles on the platform's big card, a soft drift on the footer; on other
- * pages draped over the auth card, a heap on the featured plan.
+ * screens: a soft drift on the hero editor, draped over the IDX PACK card's corners, icicles on the
+ * platform's big card, a soft drift on the footer; on other pages draped over the auth card, a heap
+ * on the featured plan.
  */
 export function NewYearSnowCap(props: React.ComponentProps<typeof SnowCap>) {
   return NEW_YEAR ? <SnowCap {...props} /> : null;

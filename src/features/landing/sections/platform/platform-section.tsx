@@ -16,8 +16,8 @@ export function PlatformSection() {
     <section id={landingAnchors.platform} className="section section-screen relative px-4">
       <div className="mx-auto max-w-6xl">
         <SectionHeading
-          comp="COMP 04"
-          timecode="00:01:12:00"
+          comp="COMP 03"
+          timecode="00:00:48:00"
           title={
             <>
               Всё в одном: <span className="text-gradient">универсальная платформа</span>

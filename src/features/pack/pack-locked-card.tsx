@@ -2,6 +2,7 @@ import { Lock } from "lucide-react";
 import { TelegramIcon } from "@/components/icons";
 import { site } from "@/config/site";
 import { pack3d as pack } from "@/content/pack";
+import { DECOR_SIZE, decorSrc } from "@/features/decor/assets";
 import { cn } from "@/lib/utils";
 
 /** Widths of the blurred "lines" in the preview: the shape of a pack card, without real content. */
@@ -19,11 +20,11 @@ export function PackLockedCard({ titleAs: Title = "h3", className }: { titleAs?:
       {/* A blurred 3D object behind the card: a hint of what the pack is about */}
       {/* eslint-disable-next-line @next/next/no-img-element -- decorative pre-rendered WebP */}
       <img
-        src="/decor/cube.webp?v=3"
+        src={decorSrc("cube")}
         alt=""
         aria-hidden
-        width={695}
-        height={720}
+        width={DECOR_SIZE.cube[0]}
+        height={DECOR_SIZE.cube[1]}
         loading="lazy"
         decoding="async"
         className="pointer-events-none absolute -top-10 -right-10 -z-10 w-56 rotate-12 opacity-45 blur-[7px] select-none"

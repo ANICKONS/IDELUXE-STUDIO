@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Check, Clapperboard, FolderDown, Lock, Package, Sparkles, Ticket } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, Clapperboard, FolderDown, Lock, Package, Play, Sparkles, Ticket } from "lucide-react";
 import { TelegramIcon } from "@/components/icons";
-import { routes } from "@/config/routes";
+import { lessonHref, routes } from "@/config/routes";
 import { site } from "@/config/site";
 import { freeTier, plans } from "@/content/plans";
 import { planName, untilText } from "@/features/account/format";
 import { OpenChatButton } from "@/features/chat";
+import type { LearnStats } from "@/features/learn/stats.server";
 import { can, type Feature } from "@/lib/access-rules";
 import { cn } from "@/lib/utils";
 import type { AccessInfo, Viewer } from "@/types/session";
@@ -15,7 +16,7 @@ import type { AccessInfo, Viewer } from "@/types/session";
  * then the four parts of the platform, each open or showing what opens it. Rendered on the server
  * from the account's real access.
  */
-export function Dashboard({ viewer }: { viewer: Viewer }) {
+export function Dashboard({ viewer, learn }: { viewer: Viewer; learn: LearnStats }) {
   const { user, access } = viewer;
   const firstName = user.name.split(/\s+/)[0] || user.name;
 
@@ -35,7 +36,7 @@ export function Dashboard({ viewer }: { viewer: Viewer }) {
           <ul className="grid gap-5 sm:grid-cols-2">
             {tiles.map((tile, i) => (
               <li key={tile.feature} className="flex">
-                <Tile {...tile} open={can(access, tile.feature)} index={4 + i} />
+                <Tile {...tile} open={can(access, tile.feature)} index={4 + i} learn={tile.feature === "tutorials" ? learn : undefined} />
               </li>
             ))}
           </ul>
@@ -148,7 +149,7 @@ const tiles: TileProps[] = [
   },
 ];
 
-function Tile({ feature, icon, title, plan, text, open, index }: TileProps & { open: boolean; index: number }) {
+function Tile({ feature, icon, title, plan, text, open, index, learn }: TileProps & { open: boolean; index: number; learn?: LearnStats }) {
   return (
     <article className="glass arrive flex w-full flex-col rounded-[2rem] p-6" style={{ "--i": index } as React.CSSProperties}>
       <div className="flex items-center gap-3.5">
@@ -169,8 +170,25 @@ function Tile({ feature, icon, title, plan, text, open, index }: TileProps & { o
         )}
       </div>
       <p className="mt-4 text-[14.5px] leading-relaxed text-muted">{open ? text[0] : text[1]}</p>
+      {/* Tutorials: how much is watched (the profile has the details) */}
+      {learn && learn.watched > 0 && (
+        <div className="mt-4">
+          <p className="flex items-baseline justify-between gap-3 text-[12.5px] text-dim">
+            Просмотрено <span className="font-mono text-fg/80 tabular-nums">{learn.watched}/{learn.total}</span>
+          </p>
+          <div aria-hidden className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/8">
+            <div className="h-full rounded-full bg-gradient-to-r from-accent-strong/70 via-accent to-accent-soft" style={{ width: `${(learn.watched / Math.max(1, learn.total)) * 100}%` }} />
+          </div>
+        </div>
+      )}
       <div className="mt-auto pt-6">
-        <TileAction feature={feature} open={open} />
+        {learn?.resume ? (
+          <Link href={lessonHref(learn.resume.slug)} className={cn(linkClass, "max-w-full")}>
+            <Play size={14} className="shrink-0" fill="currentColor" aria-hidden /> <span className="truncate">Продолжить «{learn.resume.title}»</span>
+          </Link>
+        ) : (
+          <TileAction feature={feature} open={open} />
+        )}
       </div>
     </article>
   );

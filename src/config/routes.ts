@@ -29,7 +29,6 @@ export const landingAnchors = {
   /** «Главная» as a menu section (highlighted above «Обо мне»); not a DOM id, the link goes to `top`. */
   home: "home",
   about: "about",
-  audience: "audience",
   platform: "platform",
   faq: "faq",
 } as const;
@@ -39,8 +38,19 @@ export type LandingAnchor = (typeof landingAnchors)[keyof typeof landingAnchors]
 /** The sign-in card opened on sign-up (features/auth reads the hash). */
 export const registerHref = `${routes.login}#register`;
 
+/** Sign-in that comes back to `next` (a path on this site) afterwards, e.g. a lesson. */
+export const loginHref = (next?: string) => (next ? `${routes.login}?next=${encodeURIComponent(next)}` : routes.login);
+/** The same, opened on sign-up. */
+export const registerHrefTo = (next?: string) => `${loginHref(next)}#register`;
+
 /** "/#about" — link to a landing block from any page. */
 export const anchorHref = (id: LandingAnchor) => `${routes.home}#${id}`;
 
-/** Tutorial section on /learn, e.g. "/learn#sec-vfx". */
-export const learnSectionHref = (slug: string) => `${routes.learn}#sec-${slug}`;
+/** A tutorial section on /learn, e.g. "/learn?s=vfx" (features/learn reads `s`). */
+export const learnSectionHref = (slug: string) => `${routes.learn}?s=${encodeURIComponent(slug)}`;
+
+/** A lesson's page, e.g. "/learn/deep-glow". */
+export const lessonHref = (slug: string) => `${routes.learn}/${encodeURIComponent(slug)}`;
+
+/** An item's window in «Ресурсы», e.g. "/resources?r=deep-glow" (features/resources reads `r`). */
+export const resourceHref = (id: string) => `${routes.resources}?r=${encodeURIComponent(id)}`;

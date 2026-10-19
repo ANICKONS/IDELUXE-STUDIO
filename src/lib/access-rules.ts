@@ -13,6 +13,24 @@ import type { AccessInfo } from "@/types/session";
  */
 export type Feature = "tutorials" | "resources" | "ai" | "pack";
 
+/**
+ * One item of «Ресурсы» (content/resources.ts): with LITE / PRO (or admin) — everything; with a free
+ * account — the programs and the items marked `free`; without an account — nothing.
+ */
+export function canOpenResource(access: AccessInfo | null | undefined, item: { kind: string; free?: boolean }): boolean {
+  if (!access) return false;
+  return can(access, "resources") || item.kind === "program" || item.free === true;
+}
+
+/**
+ * One tutorial (content/tutorials.ts): with PRO (or admin) — every one; with a free account (LITE
+ * too) — the intro ones (`intro`); without an account — none.
+ */
+export function canWatchTutorial(access: AccessInfo | null | undefined, lesson: { intro?: boolean }): boolean {
+  if (!access) return false;
+  return can(access, "tutorials") || lesson.intro === true;
+}
+
 export function can(access: AccessInfo | null | undefined, feature: Feature): boolean {
   if (!access) return false;
   if (access.admin) return true;

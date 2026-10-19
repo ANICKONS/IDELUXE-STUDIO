@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { routes } from "@/config/routes";
 import { ProfileView } from "@/features/account";
+import { learnStats } from "@/features/learn/stats.server";
 import { getViewer } from "@/lib/server/session";
 
 export const metadata: Metadata = { title: "Профиль", robots: { index: false } };
@@ -10,5 +11,5 @@ export const metadata: Metadata = { title: "Профиль", robots: { index: fa
 export default async function ProfilePage() {
   const viewer = await getViewer();
   if (!viewer) redirect(routes.login);
-  return <ProfileView viewer={viewer} />;
+  return <ProfileView viewer={viewer} learn={learnStats(viewer.user.id, viewer.access)} />;
 }

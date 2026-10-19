@@ -116,6 +116,29 @@
       visibility 0s;
   }
 
+  /* ── Small menus (components/ui/dropdown.tsx): grow out of their button, like the assistant's
+     panel; open state = [data-open] ── */
+  .menu-pop {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0) scale(0.97);
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 0.2s ease,
+      transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0s linear 0.25s;
+  }
+  .menu-pop[data-open] {
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+    pointer-events: auto;
+    transition:
+      opacity 0.18s ease-out,
+      transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s;
+  }
+
   /* ── Disclosure (native <details>, e.g. the FAQ) ──
      The answer slides open and closed: the details' content box is a one-row grid whose row grows
      from 0fr to 1fr, the body inside fades in. `content-visibility` (how the browser hides closed

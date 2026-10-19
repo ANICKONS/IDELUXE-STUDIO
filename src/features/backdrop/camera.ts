@@ -3,7 +3,7 @@ import { routes } from "@/config/routes";
 /*
  * Camera of the space backdrop. Every page has its shot:
  *  - "home": a huge planet rises from the bottom of the screen, the sun hidden right behind it;
- *  - "right" / "left" («Тарифы» / «Ресурсы»): the camera has flown round the planet, it hangs at
+ *  - "right" / "left" («Тарифы» and «Туториалы» / «Ресурсы»): the camera has flown round the planet, it hangs at
  *    the side of the screen and the sun lights a crescent facing the content;
  *  - "above" (the auth screens: sign-in, confirming an address, a new password): the camera has
  *    risen over the planet, only open space is left.
@@ -14,7 +14,8 @@ import { routes } from "@/config/routes";
 export type Shot = "home" | "right" | "left" | "above";
 
 export function shotFor(pathname: string): Shot {
-  if (pathname.startsWith(routes.pricing)) return "right";
+  // «Туториалы» with its lessons shares the shot: opening a lesson doesn't fly the camera
+  if (pathname.startsWith(routes.pricing) || pathname.startsWith(routes.learn)) return "right";
   if (pathname.startsWith(routes.resources)) return "left";
   // Every auth screen keeps the same shot, so following a link from a letter doesn't move the camera
   if (pathname.startsWith(routes.login) || pathname.startsWith(routes.verifyEmail) || pathname.startsWith(routes.resetPassword)) return "above";

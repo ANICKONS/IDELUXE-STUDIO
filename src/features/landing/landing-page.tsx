@@ -1,6 +1,5 @@
 import { HeroSection } from "@/features/landing/sections/hero/hero-section";
 import { AboutSection } from "@/features/landing/sections/about/about-section";
-import { AudienceSection } from "@/features/landing/sections/audience/audience-section";
 import { PlatformSection } from "@/features/landing/sections/platform/platform-section";
 import { FaqSection } from "@/features/landing/sections/faq/faq-section";
 import { CtaSection } from "@/features/landing/sections/cta/cta-section";
@@ -19,7 +18,6 @@ export function LandingPage() {
       {/* Below the first screen: after a page switch, built once the hero has come in */}
       <AfterArrival>
         <AboutSection />
-        <AudienceSection />
         <PlatformSection />
         <FaqSection />
         <CtaSection />

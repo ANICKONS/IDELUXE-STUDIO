@@ -1,30 +1,15 @@
 "use client";
 
 import { useCallback } from "react";
+import { DECOR_SIZE, decorSrc, type DecorName } from "@/features/decor/assets";
 import { cn } from "@/lib/utils";
 
-/**
+/*
  * Pre-rendered three.js objects in /public/decor (transparent WebP), all made by tools/decor-render
  * (scene, studio light, render script; README → «3D-декор»): black chrome, champagne gold, ivory.
+ * The list, sizes and cache version: assets.ts.
  */
-export type DecorName = "play" | "keyframe" | "sparkle" | "lens" | "wave" | "knot" | "cube" | "asterisk";
-
-/**
- * Bump after re-rendering: /decor is cached by browsers for a week (next.config.ts), and the
- * file names stay the same.
- */
-const DECOR_VERSION = 3;
-
-const INTRINSIC: Record<DecorName, [number, number]> = {
-  play: [683, 720],
-  keyframe: [617, 720],
-  sparkle: [667, 720],
-  lens: [720, 712],
-  wave: [720, 605],
-  knot: [707, 720],
-  cube: [695, 720],
-  asterisk: [638, 720],
-};
+export type { DecorName };
 
 /*
  * Depth of field. The page content is the focal plane, at depth FOCUS. Objects behind it (depth
@@ -267,7 +252,7 @@ function DecorObject({
 }) {
   const { src, width: w, height: h } =
     typeof item.name === "string"
-      ? { src: `/decor/${item.name}.webp?v=${DECOR_VERSION}`, width: INTRINSIC[item.name][0], height: INTRINSIC[item.name][1] }
+      ? { src: decorSrc(item.name), width: DECOR_SIZE[item.name][0], height: DECOR_SIZE[item.name][1] }
       : item.name;
   const left = item.side === "left";
   const blur = item.blur ?? focusBlur(item.depth);

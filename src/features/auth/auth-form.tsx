@@ -19,6 +19,22 @@ type Notice = "telegram" | "google" | "need-email";
 /** A letter is on its way: the form gives way to «проверь почту». */
 type Sent = { kind: "verify" | "reset"; email: string };
 
+/**
+ * Where to go once signed in: `?next=` (config/routes → loginHref, e.g. back to a lesson) when
+ * it's a path on this very site, otherwise "/". Anything else — another host, `//host`, a
+ * backslash trick — is ignored, so the link can't send anyone away from the site.
+ */
+function returnPath(): string {
+  const raw = new URLSearchParams(window.location.search).get("next");
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) return routes.home;
+  try {
+    const url = new URL(raw, window.location.origin);
+    return url.origin === window.location.origin ? url.pathname + url.search : routes.home;
+  } catch {
+    return routes.home;
+  }
+}
+
 /** Better Auth's error codes > what to tell the person. */
 function errorText(error: { code?: string; status?: number; message?: string }): string {
   if (error.status === 429) return "Слишком много попыток. Подожди минуту и попробуй снова.";
@@ -64,7 +80,8 @@ const copy: Record<Mode, { title: string; lead: string; submit: string; switchHi
  * With mail set up (lib/server/mail.ts) a new account must confirm its address first: the form
  * then gives way to «проверь почту» with a resend button. The same screen appears when an
  * unconfirmed account tries to sign in, and after asking for a password reset.
- * On success the site reloads at "/", which is the account's home then.
+ * On success the site reloads at "/", which is the account's home then — or where `?next=` points
+ * (a lesson the visitor came from, returnPath below).
  */
 export function AuthForm() {
   const [mode, setMode] = useState<Mode>("login");
@@ -97,7 +114,7 @@ export function AuthForm() {
   const router = useRouter();
   const { viewer } = useViewer();
   useEffect(() => {
-    if (viewer) router.replace(routes.home);
+    if (viewer) router.replace(returnPath());
   }, [viewer, router]);
 
   // «Создать аккаунт» links open the card on sign-up (config/routes → registerHref: /login#register).
@@ -192,7 +209,7 @@ export function AuthForm() {
             return;
           }
           // A full reload: the header, the caches and "/" (now the account's home) start fresh
-          window.location.assign(routes.home);
+          window.location.assign(returnPath());
         }}
       >
         <Collapse open={isRegister}>
@@ -332,8 +349,8 @@ export function AuthForm() {
           onClick={async () => {
             setNotice(null);
             setError(null);
-            // Leaves for Telegram and comes back to "/"; an error means the keys aren't set
-            const { error: failed } = await authClient.signIn.social({ provider: "telegram", callbackURL: routes.home });
+            // Leaves for Telegram and comes back to "/" (or `?next=`); an error means the keys aren't set
+            const { error: failed } = await authClient.signIn.social({ provider: "telegram", callbackURL: returnPath() });
             if (failed) setNotice("telegram");
           }}
         >
@@ -346,7 +363,7 @@ export function AuthForm() {
           onClick={async () => {
             setNotice(null);
             setError(null);
-            const { error: failed } = await authClient.signIn.social({ provider: "google", callbackURL: routes.home });
+            const { error: failed } = await authClient.signIn.social({ provider: "google", callbackURL: returnPath() });
             if (failed) setNotice("google");
           }}
         >

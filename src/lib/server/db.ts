@@ -31,6 +31,9 @@ export function getDb(): DatabaseSync {
  *  - entitlement: one row per grant. `pack` never ends (ends_at NULL); `lite` / `pro` cover
  *    [starts_at, ends_at); a renewal starts where the previous period ends.
  *  - promo_code / promo_redemption: codes that grant a subscription period, each account once.
+ *  - tutorial_progress: where an account stopped in each lesson (`lesson` = its slug in
+ *    content/tutorials.ts), seconds; `watched` once it's seen to the end or marked by hand
+ *    (features/learn/progress.server.ts).
  * Change them only by adding: new tables, new nullable columns.
  */
 export function migrateAppTables(db: DatabaseSync): void {
@@ -63,6 +66,17 @@ export function migrateAppTables(db: DatabaseSync): void {
       user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
       redeemed_at INTEGER NOT NULL,
       PRIMARY KEY (code, user_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS tutorial_progress (
+      user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      lesson TEXT NOT NULL,
+      position REAL NOT NULL DEFAULT 0,
+      duration REAL NOT NULL DEFAULT 0,
+      watched INTEGER NOT NULL DEFAULT 0 CHECK (watched IN (0, 1)),
+      watched_at INTEGER,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (user_id, lesson)
     );
   `);
 }

@@ -3,7 +3,7 @@
 //   npm run render --prefix tools/decor-render              — every object
 //   npm run render --prefix tools/decor-render -- play lens — only these
 // The scene (models, materials, studio light) lives in scene.js and runs in a headless Edge
-// (or Chrome: set BROWSER_PATH). Prints the intrinsic sizes for INTRINSIC in decor-3d.tsx and
+// (or Chrome: set BROWSER_PATH). Prints the intrinsic sizes for DECOR_SIZE in features/decor/assets.ts and
 // saves a contact sheet on a dark background to preview.png.
 import { createServer } from "node:http";
 import { readFile, writeFile, mkdir } from "node:fs/promises";

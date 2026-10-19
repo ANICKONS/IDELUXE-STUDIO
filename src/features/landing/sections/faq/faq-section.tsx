@@ -12,8 +12,8 @@ export function FaqSection() {
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)]">
         <div>
           <SectionHeading
-            comp="COMP 05"
-            timecode="00:01:36:00"
+            comp="COMP 04"
+            timecode="00:01:12:00"
             ghost="FAQ"
             title="Частые вопросы"
             description="Не нашёл ответ? Спроси ИИ-ассистента или напиши IDELUXE в Telegram."

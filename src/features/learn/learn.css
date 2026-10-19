@@ -1,0 +1,210 @@
+/* ───────────────────────── «Туториалы» (features/learn) ─────────────────────────
+   Covers, cards, the lesson page's layout and the player. Only transform / opacity animate. With
+   reduced motion (styles/effects.css) everything is simply in place. */
+
+/* ── Cover (cover.tsx): the section's light, its 3D object, its name as an outlined word ── */
+.lesson-cover {
+  container-type: inline-size;
+  background:
+    radial-gradient(55% 85% at 78% 40%, rgb(var(--tint) / 0.42), transparent 70%),
+    radial-gradient(40% 60% at 12% 0%, rgb(255 255 255 / 0.08), transparent 70%),
+    radial-gradient(70% 90% at 30% 120%, rgb(var(--tint) / 0.22), transparent 70%),
+    linear-gradient(160deg, rgb(255 255 255 / 0.04), transparent 50%),
+    rgb(var(--rgb-ink) / 0.92);
+}
+/* Soft dark at the bottom, where the badges and the progress sit */
+.lesson-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgb(var(--rgb-ink) / 0.6));
+  pointer-events: none;
+}
+/* The player before it starts: an editor's safe frame */
+.lesson-cover-stage::before {
+  content: "";
+  position: absolute;
+  inset: 4%;
+  z-index: 1;
+  border: 1px dashed rgb(255 255 255 / 0.09);
+  border-radius: 0.9rem;
+  pointer-events: none;
+}
+.lesson-cover-word {
+  position: absolute;
+  left: 6%;
+  bottom: 2%;
+  /* Of the cover's width (container query units): the same look on a card and on the stage */
+  font-size: 16cqw;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1px rgb(var(--tint) / 0.32);
+  background: linear-gradient(180deg, rgb(var(--tint) / 0.16), transparent 85%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.lesson-cover-object {
+  position: absolute;
+  top: 50%;
+  right: 4%;
+  height: var(--size, 84%);
+  aspect-ratio: 1;
+  /* Placed, turned, sized and mirrored by the lesson's slug (cover.tsx) */
+  transform: translate3d(var(--shift, 0%), calc(-50% + var(--lift, 0%)), 0) rotate(var(--turn, 0deg))
+    scale(calc(var(--scale, 1) * var(--flip, 1)), var(--scale, 1));
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lesson-cover-img,
+.lesson-cover-glow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.lesson-cover-img {
+  filter: drop-shadow(0 18px 24px rgb(0 0 0 / 0.55));
+}
+/* The object's own light under it */
+.lesson-cover-glow {
+  opacity: 0.55;
+  filter: blur(22px) saturate(1.6);
+  transform: scale(1.12);
+}
+
+/* ── Card (lesson-card.tsx) ── */
+.lesson-card {
+  transition:
+    translate 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s;
+}
+.lesson-card:hover {
+  translate: 0 -4px;
+  border-color: rgb(255 255 255 / 0.16);
+}
+.lesson-card:hover .lesson-cover-object,
+.lesson-card:focus-visible .lesson-cover-object,
+.lesson-row:hover .lesson-cover-object {
+  transform: translate3d(calc(var(--shift, 0%) - 4%), calc(-50% + var(--lift, 0%) - 3%), 0) rotate(calc(var(--turn, 0deg) + 8deg))
+    scale(calc(var(--scale, 1) * var(--flip, 1) * 1.08), calc(var(--scale, 1) * 1.08));
+}
+/* The play button comes up on hover */
+.lesson-play {
+  opacity: 0;
+  transform: scale(0.85);
+  transition:
+    opacity 0.3s ease,
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lesson-card:hover .lesson-play,
+.lesson-card:focus-visible .lesson-play {
+  opacity: 1;
+  transform: none;
+}
+/* Cards that show up after the page came in (a new section, a filter, the search) */
+.lesson-in {
+  animation: lesson-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--n, 0) * 30ms);
+}
+@keyframes lesson-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.98);
+  }
+}
+
+/* Phones: the sections in one row that scrolls sideways, fading at the edges */
+.chip-scroller {
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 1rem, #000 calc(100% - 1.5rem), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 1rem, #000 calc(100% - 1.5rem), transparent);
+}
+.chip-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── The lesson's page (lesson-view.tsx) ──
+   Phones: the player, the title, the chapters, the rest, the section's list. Desktop: the chapters
+   beside the player (exactly its height, scrolling inside: `contain: size` keeps their length out
+   of the row's), the section's list under them. */
+.lesson-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-areas: "stage" "head" "chapters" "body" "list";
+}
+@media (min-width: 64rem) {
+  .lesson-grid {
+    grid-template-columns: minmax(0, 1fr) 21rem;
+    grid-template-areas:
+      "stage chapters"
+      "head list"
+      "body list";
+    grid-template-rows: auto auto 1fr;
+    column-gap: 1.5rem;
+  }
+  .lesson-area-chapters {
+    contain: size;
+  }
+  .lesson-area-list {
+    align-self: start;
+  }
+}
+@media (min-width: 80rem) {
+  .lesson-grid {
+    grid-template-columns: minmax(0, 1fr) 23rem;
+  }
+}
+.lesson-area-stage {
+  grid-area: stage;
+}
+.lesson-area-head {
+  grid-area: head;
+}
+.lesson-area-chapters {
+  grid-area: chapters;
+}
+.lesson-area-body {
+  grid-area: body;
+}
+.lesson-area-list {
+  grid-area: list;
+}
+
+/* ── Player (player.tsx) ── */
+/* Big feedback in the middle on play / pause / a jump, fading out */
+.player-flash {
+  animation: player-flash 0.6s ease-out forwards;
+}
+@keyframes player-flash {
+  from {
+    opacity: 1;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+/* The timeline's hover tip follows the pointer (left set by script) */
+.player-tip {
+  opacity: 0;
+  transform: translate3d(-50%, 4px, 0);
+  transition:
+    opacity 0.15s ease,
+    transform 0.2s ease;
+}
+.player-timeline:hover .player-tip,
+.player-timeline[data-scrub] .player-tip {
+  opacity: 1;
+  transform: translate3d(-50%, 0, 0);
+}
+/* The bar thickens under the pointer */
+.player-track {
+  transition: height 0.2s ease;
+}
+.player-timeline:hover .player-track,
+.player-timeline[data-scrub] .player-track {
+  height: 0.5rem;
+}
