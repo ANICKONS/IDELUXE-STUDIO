@@ -37,12 +37,16 @@ export const landingVideos = {
   aboutLoop: loop("about-loop", ["webm", "mp4"]),
 } satisfies Record<string, VideoAsset>;
 
+/** A vertical edit of the hero editor's feed (content/edits.ts): /videos/edits/<name>.mp4 + .jpg (cover). */
+export const editMedia = (name: string) => ({ src: url(`edits/${name}.mp4`), poster: url(`edits/${name}.jpg`) });
+
 /* ───────────────────────── Reels: full videos with sound ───────────────────────── */
 
 export type ReelId = "showreel" | "about";
 
+/** The fixed reels below, or one built on the fly (an edit of the hero feed: `edit:<id>`). */
 export type Reel = {
-  id: ReelId;
+  id: string;
   title: string;
   subtitle: string;
   /** width / height */

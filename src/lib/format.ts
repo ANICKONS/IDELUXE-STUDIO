@@ -31,6 +31,15 @@ export function formatClock(seconds: number): string {
   return h ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
 }
 
+const MONTHS = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
+
+/** "2026-09" (or "2026-09-14") → "сентябрь 2026"; anything else as it is. */
+export function formatMonth(value: string): string {
+  const m = /^(\d{4})-(\d{2})/.exec(value);
+  const month = m ? MONTHS[Number(m[2]) - 1] : undefined;
+  return m && month ? `${month} ${m[1]}` : value;
+}
+
 /** Russian plural form (word only): pluralRu(5, ["туториал", "туториала", "туториалов"]) → "туториалов". */
 export function pluralRu(n: number, forms: readonly [one: string, few: string, many: string]): string {
   const abs = Math.abs(Math.trunc(n));

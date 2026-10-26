@@ -12,7 +12,8 @@ import { packStats } from "@/content/pack";
  * «Главная» and the logo lead, the header in its full state): the headline, a one-line lead, the
  * editor window in the middle and the pack's numbers with a little air below them. The editor's
  * width follows the screen height (see below); on short screens it also hides a few secondary
- * panels (editor-mock.tsx → `short:`). The showreel opens from its monitor.
+ * panels (vfx-view.tsx → `short:`). The showreel opens from its monitor; the window's second tab
+ * is a feed of vertical edits (edits-view.tsx), laid over the first one at the same height.
  */
 export function HeroSection() {
   return (
@@ -38,7 +39,7 @@ export function HeroSection() {
 
         {/* The window is as wide as the row of numbers. Desktop: so that everything fits the first
             screen, only its program monitor follows the screen height (--editor-monitor, the width
-            of its column; the side panels take the rest — editor-mock.tsx). The headline, the lead
+            of its column; the side panels take the rest — vfx-view.tsx). The headline, the lead
             and the gaps scale with the height too; fitted on 1280×720 … 1920×1200 */}
         <div className="relative mt-10 lg:mt-[clamp(1rem,2.6svh,2rem)] lg:[--editor-monitor:min(max(15rem,calc(134svh_-_825px)),calc(100%_-_442px))]">
           <div

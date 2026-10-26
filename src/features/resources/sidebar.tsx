@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ChevronDown, CircleCheck, Lock, LockOpen } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronDown, CircleCheck, Clapperboard, Lock, LockOpen } from "lucide-react";
+import { TelegramIcon } from "@/components/icons";
 import { registerHref, routes } from "@/config/routes";
+import { site } from "@/config/site";
 import { formLabel, kindLabel, sections, type AddonForm, type ResourceKind } from "@/content/resource-taxonomy";
 import type { FormFilter } from "@/features/resources/filter";
 import { FormGlyph, sectionIcon } from "@/features/resources/glyphs";
@@ -20,7 +22,8 @@ export function formName(section: ResourceKind, form: FormFilter): string {
 /**
  * The hub's sections down the left (desktop): Программы, Плагины, Расширения with how many each
  * holds. The picked one opens its groups under it — modules, collections, add-ons one by one
- * (sliding, resources.css → .res-collapse). At the bottom, one line about what this account can download.
+ * (sliding, resources.css → .res-collapse). Under them «Клипы», a link to the Telegram channel with
+ * the clips, and at the bottom one line about what this account can download.
  */
 export function Sidebar({
   section,
@@ -127,8 +130,44 @@ export function Sidebar({
         })}
       </ul>
 
+      <div className="mt-2 border-t border-white/6 pt-2">
+        <ClipsLink />
+      </div>
+
       <AccessNote audience={audience} admin={admin} openCount={openCount} className="mt-2 border-t border-white/6 px-2.5 pt-3.5 pb-2" />
     </nav>
+  );
+}
+
+/**
+ * «Клипы»: not a section of the hub but the Telegram channel the clips are collected in
+ * (config/site.ts → telegram.clips), opened in a new tab. In the sidebar it looks like a section
+ * row with an outward arrow; on phones it's a row of its own under the tabs (`block`).
+ */
+export function ClipsLink({ block = false, className }: { block?: boolean; className?: string }) {
+  return (
+    <a
+      href={site.telegram.clips.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(
+        "group/clips flex w-full items-center gap-3 rounded-[1.15rem] border px-2.5 py-2 text-left text-fg/80 transition-[background-color,border-color,color] duration-300 hover:text-fg",
+        block ? "glass-soft border-white/8 hover:border-white/16" : "border-transparent hover:bg-white/[0.035]",
+        className,
+      )}
+    >
+      <span aria-hidden className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-fg/70 transition-colors duration-300 group-hover/clips:border-accent/35 group-hover/clips:text-accent-soft">
+        <Clapperboard size={17} />
+      </span>
+      <span className="min-w-0 flex-1 leading-tight">
+        <span className="block text-[14.5px] font-semibold">Клипы</span>
+        <span className="mt-0.5 flex items-center gap-1 text-[12px] text-dim">
+          <TelegramIcon size={12} className="shrink-0 text-accent" /> Смотреть в канале
+        </span>
+      </span>
+      <ArrowUpRight size={16} aria-hidden className="shrink-0 text-dim transition-[translate,color] duration-300 group-hover/clips:translate-x-0.5 group-hover/clips:-translate-y-0.5 group-hover/clips:text-fg/80" />
+      <span className="sr-only">(откроется Telegram)</span>
+    </a>
   );
 }
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogoMark, TelegramIcon } from "@/components/icons";
+import { DiscordIcon, LogoMark, TelegramIcon } from "@/components/icons";
 import { HashLink } from "@/components/layout/hash-link";
 import { FooterNav } from "@/components/layout/footer-nav";
 import { FOOTER_ID } from "@/components/layout/layout-ids";
@@ -35,7 +35,7 @@ export function Footer() {
           ))}
 
           <div>
-            <h2 className="font-mono text-[11px] tracking-[0.18em] text-dim uppercase">Связь</h2>
+            <h2 className="font-display text-sm font-semibold text-fg">Связь</h2>
             <ul className="mt-4 space-y-2.5">
               {footerContacts.map((c) => (
                 <li key={c.handle}>
@@ -50,6 +50,17 @@ export function Footer() {
                   </a>
                 </li>
               ))}
+              <li>
+                <a
+                  href={site.discord.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-muted transition hover:text-fg"
+                >
+                  <DiscordIcon size={15} className="text-accent" />
+                  {site.discord.hint}
+                </a>
+              </li>
             </ul>
             <p className="mt-3 text-xs text-dim">По всем вопросам — в личные сообщения.</p>
           </div>
@@ -69,7 +80,7 @@ export function Footer() {
             ))}
           </ul>
         </div>
-        <p className="mt-4 text-[11px] leading-relaxed text-dim/80">
+        <p className="mt-4 text-xs leading-relaxed text-dim">
           Adobe, After Effects, Premiere Pro, Media Encoder — товарные знаки Adobe Inc. Vegas Pro — товарный знак MAGIX. Проект
           не аффилирован с правообладателями.
         </p>

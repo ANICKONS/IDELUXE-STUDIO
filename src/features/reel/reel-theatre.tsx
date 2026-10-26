@@ -124,12 +124,12 @@ export function ReelTheatre() {
   /* ── Open (from any ReelButton) ── */
   useEffect(() => {
     const onOpen = (e: Event) => {
-      const { id, origin } = (e as CustomEvent<OpenReelDetail>).detail;
-      const next = reels[id];
+      const { reel: requested, origin } = (e as CustomEvent<OpenReelDetail>).detail;
+      const next = typeof requested === "string" ? reels[requested] : requested;
       const current = stateRef.current;
 
       // Same reel already playing in the mini window → just expand it.
-      if (current.reel?.id === id) {
+      if (current.reel?.id === next.id) {
         if (current.mode === "mini" && boxRef.current) {
           flipRef.current = { from: geometry(boxRef.current), fade: false, tilt: 0 };
           setMode("theatre");
@@ -725,7 +725,7 @@ export function ReelTheatre() {
                   <ControlButton ref={playBtnRef} onClick={ended ? replay : togglePlay} label={ended ? "Смотреть ещё раз" : playing ? "Пауза (K)" : "Смотреть (K)"}>
                     {ended ? <RotateCcw size={16} /> : playing ? <Pause size={16} /> : <Play size={16} />}
                   </ControlButton>
-                  <p className="font-mono text-[11px] text-accent-soft tabular-nums sm:text-[12px]">
+                  <p className="font-mono text-[11px] whitespace-nowrap text-accent-soft tabular-nums sm:text-[12px]">
                     <span ref={timecodeRef}>00:00:00:00</span>
                     <span className="hidden text-dim sm:inline"> / {timecode(duration || reel.duration, reel.fps)}</span>
                   </p>

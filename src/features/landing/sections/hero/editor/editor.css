@@ -1,0 +1,174 @@
+/* ───────────────────────── Hero editor window (features/landing/sections/hero/editor) ─────────────────────────
+   Two views in one window, switched by the tabs in its title bar (editor-mock.tsx): «Шоурил VFX»
+   (vfx-view.tsx) and «Шоурил эдитов» (edits-view.tsx). Only transform / opacity / filter animate.
+   With reduced motion (styles/effects.css) every switch is simply instant. */
+
+/* ── The views ──
+   «Шоурил VFX» stays in the flow and gives the window its height (the hero is fitted to the first
+   screen by it), «Шоурил эдитов» lies over it. The view that leaves fades out with a slight blur,
+   drifting towards its tab's side; the one that comes in slides in from the other side, a beat later.
+   Hidden = invisible and inert, so nothing in it can be clicked or focused. */
+.editor-view {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  filter: blur(6px);
+  transform: translate3d(var(--editor-side, 0), 0, 0) scale(0.985);
+  transition:
+    opacity 0.32s ease,
+    filter 0.32s ease,
+    transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 0.45s;
+}
+.editor-view[data-side="start"] {
+  --editor-side: -3%;
+}
+.editor-view[data-side="end"] {
+  --editor-side: 3%;
+}
+.editor-view[data-active] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  filter: none;
+  transform: none;
+  transition:
+    opacity 0.45s ease 0.1s,
+    filter 0.45s ease 0.1s,
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.06s,
+    visibility 0s;
+}
+
+/* After the first switch the panels of the view that comes in rise one after another (order in
+   --d). Not on the first load: the window has its own entrance there (.arrive). */
+.editor-views[data-switched] .editor-view[data-active] [data-enter] {
+  animation: editor-enter 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(0.12s + var(--d, 0) * 0.06s);
+}
+@keyframes editor-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+}
+
+/* A band of light runs across the window on a switch, like a light-wipe transition between two
+   clips (moved by editor-mock.tsx in the direction of the switch) */
+.editor-sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  overflow: hidden;
+  pointer-events: none;
+}
+.editor-sweep > span {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: 0;
+  width: 38%;
+  opacity: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--rgb-accent-soft) / 0.08) 30%,
+    rgb(255 255 255 / 0.13) 50%,
+    rgb(var(--rgb-accent-soft) / 0.08) 70%,
+    transparent
+  );
+  mix-blend-mode: screen;
+}
+
+/* ── «Шоурил эдитов»: the feed ──
+   Vertical cards stand in a row, the current one in the middle; the neighbours step back, turn a
+   little towards it and dim. Each card's place comes from --o (offset from the current one, ±) and
+   --a (its absolute value); --drag follows a finger or the mouse while swiping. */
+.edit-stage {
+  perspective: 1100px;
+}
+.edit-card {
+  --k: min(var(--a), 3);
+  z-index: calc(10 - var(--a));
+  opacity: calc(1 - var(--k) * 0.3);
+  transform: translate3d(calc(-50% + var(--o) * 80% + var(--drag, 0px)), 0, 0) rotateY(calc(var(--o) * -12deg)) scale(calc(1 - var(--k) * 0.15));
+  transition:
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.5s ease,
+    visibility 0s;
+}
+/* Beyond the neighbours' neighbours: out of sight (they still slide, so wrapping around is smooth) */
+.edit-card[data-far] {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.3s ease,
+    visibility 0s linear 0.3s;
+}
+.edit-stage[data-dragging] .edit-card {
+  transition: opacity 0.5s ease;
+}
+
+.edit-media {
+  filter: brightness(0.5) saturate(0.75);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.08),
+    0 24px 40px -24px rgb(0 0 0 / 0.9);
+  transition:
+    filter 0.5s ease,
+    box-shadow 0.5s ease;
+}
+.edit-card:not([data-current]):hover .edit-media {
+  filter: brightness(0.7) saturate(0.9);
+}
+.edit-card[data-current] .edit-media {
+  filter: none;
+  box-shadow:
+    0 0 0 1px rgb(var(--rgb-accent) / 0.5),
+    0 18px 44px -18px rgb(var(--rgb-accent) / 0.55),
+    0 30px 60px -30px rgb(0 0 0 / 0.95);
+}
+
+/* The current card's captions and progress come in once it has settled */
+.edit-overlay {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.edit-card[data-current] .edit-overlay {
+  opacity: 1;
+  transition: opacity 0.4s ease 0.25s;
+}
+
+/* «Об эдите»: on short screens the panel is low; the effects list goes rather than being cut in half */
+.edit-about {
+  container-type: size;
+}
+@container (max-height: 10rem) {
+  .edit-about-more {
+    display: none;
+  }
+}
+
+/* «Now playing» bars next to the current edit in the project bin */
+.edit-eq > span {
+  transform-origin: 50% 100%;
+  animation: edit-eq 0.9s ease-in-out infinite;
+}
+.edit-eq > span:nth-child(2) {
+  animation-delay: -0.3s;
+}
+.edit-eq > span:nth-child(3) {
+  animation-delay: -0.6s;
+}
+.edit-eq[data-paused] > span {
+  animation-play-state: paused;
+}
+@keyframes edit-eq {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}

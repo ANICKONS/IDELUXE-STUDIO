@@ -33,7 +33,7 @@ export function ProfileView({ viewer, learn }: { viewer: Viewer; learn: LearnSta
         <article className="glass arrive flex flex-col rounded-[2rem] p-7 sm:p-8 lg:col-span-2 lg:flex-row lg:items-center lg:gap-8">
           <Avatar name={user.name} src={user.avatarUrl} size={72} />
           <div className="mt-5 min-w-0 flex-1 lg:mt-0">
-            <p className="font-mono text-[11px] tracking-[0.18em] text-accent-soft uppercase">Профиль</p>
+            <p className="kicker">Профиль</p>
             <h1 className="mt-2 truncate font-display text-3xl font-bold tracking-tight">{user.name}</h1>
             <p className="mt-1 truncate text-sm text-muted">{user.email}</p>
           </div>

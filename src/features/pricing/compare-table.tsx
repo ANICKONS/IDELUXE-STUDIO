@@ -32,9 +32,9 @@ export function CompareTable({ className }: { className?: string }) {
                 <th
                   scope="colgroup"
                   colSpan={compareColumns.length}
-                  className="px-5 pt-6 pb-2 font-mono text-[11px] font-normal tracking-[0.16em] text-accent-soft uppercase sm:px-6"
+                  className="px-5 pt-6 pb-2 text-left sm:px-6"
                 >
-                  {group.title}
+                  <span className="kicker">{group.title}</span>
                 </th>
                 <td aria-hidden className="bg-accent/[0.07]" />
               </tr>

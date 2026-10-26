@@ -31,6 +31,8 @@ export const landingAnchors = {
   about: "about",
   platform: "platform",
   faq: "faq",
+  /** «Отзывы» before the final card: not in the menu, the about block links to it. */
+  reviews: "reviews",
 } as const;
 
 export type LandingAnchor = (typeof landingAnchors)[keyof typeof landingAnchors];

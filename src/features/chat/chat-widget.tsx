@@ -259,7 +259,7 @@ export function ChatWidget() {
 
             {messages.length === 0 && (
               <div className="pt-2">
-                <p className="mb-2 font-mono text-[10px] tracking-[0.16em] text-dim uppercase">Популярные вопросы</p>
+                <p className="label mb-2.5">Популярные вопросы</p>
                 <div className="flex flex-wrap gap-2">
                   {suggestions.map((s) => (
                     <button
@@ -352,7 +352,7 @@ function LockedPanel({ reason }: { reason: "auth" | "plan" }) {
       >
         <Lock size={22} />
       </span>
-      <p className="mt-5 font-mono text-[10px] tracking-[0.18em] text-accent-soft uppercase">В подписке IDX PRO</p>
+      <p className="kicker mt-5">В подписке IDX PRO</p>
       <h2 className="mt-2 font-display text-xl font-semibold text-balance">Ассистент по монтажу 24/7</h2>
       <p className="mt-3 text-sm leading-relaxed text-muted">
         Подскажет эффект, настройки экспорта и горячие клавиши, разберёт ошибку рендера в After Effects, Premiere Pro и Vegas Pro.

@@ -9,7 +9,7 @@ import { site } from "@/config/site";
 
 export function CtaSection() {
   return (
-    // Continues the FAQ screen (same menu category), so it sits closer than the usual block gap
+    // Follows the reviews within the FAQ's menu category, so it sits closer than the usual block gap
     <section className="section relative px-4 [--section-gap:4.5rem]">
       <div className="glass reveal relative mx-auto max-w-6xl overflow-hidden rounded-[2.5rem] px-6 py-16 text-center sm:px-12 sm:py-24">
         {/* «бэк», recoloured into the palette.
@@ -28,7 +28,7 @@ export function CtaSection() {
           <AppTile code="Ae" size={110} />
         </div>
 
-        <p className="font-mono text-[11px] tracking-[0.18em] text-accent-soft uppercase">Render queue · готово к экспорту</p>
+        <p className="kicker">Готово к экспорту</p>
         <h2 className="mx-auto mt-5 max-w-3xl font-display text-3xl leading-tight font-semibold text-balance sm:text-5xl">
           Готов смонтировать свой <span className="text-gradient">лучший ролик</span>?
         </h2>

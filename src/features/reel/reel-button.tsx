@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, type ButtonHTMLAttributes } from "react";
-import type { ReelId } from "@/config/media";
+import type { Reel, ReelId } from "@/config/media";
 import { openReel } from "@/features/reel/events";
 
 function isOnScreen(el: Element) {
@@ -18,7 +18,7 @@ export function ReelButton({
   origin,
   children,
   ...props
-}: { reel: ReelId; origin?: string } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onClick" | "type">) {
+}: { reel: ReelId | Reel; origin?: string } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onClick" | "type">) {
   const ref = useRef<HTMLButtonElement>(null);
 
   return (

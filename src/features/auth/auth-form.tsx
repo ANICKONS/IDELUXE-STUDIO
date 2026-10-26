@@ -338,7 +338,7 @@ export function AuthForm() {
         </button>
       </form>
 
-      <div className="my-6 flex items-center gap-3 font-mono text-[10px] tracking-[0.18em] text-dim uppercase" aria-hidden>
+      <div className="my-6 flex items-center gap-3 text-[13px] text-muted" aria-hidden>
         <span className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" /> или <span className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
       </div>
 

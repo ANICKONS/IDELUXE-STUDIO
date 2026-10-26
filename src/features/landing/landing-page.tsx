@@ -2,6 +2,7 @@ import { HeroSection } from "@/features/landing/sections/hero/hero-section";
 import { AboutSection } from "@/features/landing/sections/about/about-section";
 import { PlatformSection } from "@/features/landing/sections/platform/platform-section";
 import { FaqSection } from "@/features/landing/sections/faq/faq-section";
+import { ReviewsSection } from "@/features/landing/sections/reviews/reviews-section";
 import { CtaSection } from "@/features/landing/sections/cta/cta-section";
 import { ReelTheatre } from "@/features/reel";
 import { AfterArrival } from "@/features/landing/after-arrival";
@@ -20,6 +21,8 @@ export function LandingPage() {
         <AboutSection />
         <PlatformSection />
         <FaqSection />
+        {/* Social proof right before the call to action (content/reviews.ts) */}
+        <ReviewsSection />
         <CtaSection />
       </AfterArrival>
       {/* Showreel / «о нас» player: opened by any ReelButton on the page */}

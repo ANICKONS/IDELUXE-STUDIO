@@ -268,7 +268,7 @@ function Crumbs({ item, lookup }: { item: CatalogItem; lookup: Lookup }) {
   const parent = item.kind !== "program" && item.form === "single" && item.collection ? lookup.byId.get(item.collection) : undefined;
   const tail = parent ? parent.name : item.kind !== "program" && item.form !== "single" ? formLabel[item.form].one : null;
   return (
-    <p className="flex min-w-0 items-center gap-2 pl-1 font-mono text-[10.5px] tracking-[0.18em] text-dim uppercase">
+    <p className="flex min-w-0 items-center gap-2 pl-1 text-[13px] font-semibold text-fg/75">
       <Icon size={14} aria-hidden className="shrink-0 text-accent-soft" />
       <span className="truncate">
         {kindLabel[item.kind].many}
@@ -428,7 +428,7 @@ function ItemView({
       {/* About, what's inside, installation */}
       <div className="res-area-body min-w-0 space-y-3">
         <section data-reveal className="px-1 pb-3 sm:px-2">
-          <h3 className="font-mono text-[10.5px] tracking-[0.18em] text-dim uppercase">Описание</h3>
+          <h3 className="text-[14.5px] font-semibold text-fg">Описание</h3>
           <p className="mt-2.5 text-[15px] leading-relaxed text-fg/85">{item.about}</p>
         </section>
 

@@ -45,25 +45,6 @@ export const faq: { q: string; a: string }[] = [
   },
 ];
 
-/** «Мой подход» in «Обо мне». `icon` is mapped in about-section.tsx. */
-export const approachPillars = [
-  {
-    icon: "briefcase",
-    title: "Реальные кейсы",
-    text: "Разбираю эффекты из проектов, которые вышли в свет: клипы, реклама, контент для артистов.",
-  },
-  {
-    icon: "wrench",
-    title: "Рабочие инструменты",
-    text: "Те же футажи, пресеты, текстуры и плагины, которыми пользуюсь сам в коммерческих заказах.",
-  },
-  {
-    icon: "headphones",
-    title: "На связи",
-    text: "Не получается повторить эффект или падает рендер — пиши в Telegram, подскажу.",
-  },
-] as const;
-
 /** Programs used in the tutorials: tiles in the «Программы, плагины, расширения» card + the AI prompt. */
 export const software = [
   { code: "Ae", name: "After Effects", role: "Моушн и эффекты", text: "Моушн-дизайн, анимация текста, эффекты, трекинг и композитинг." },

@@ -67,7 +67,7 @@ function PlanCard({ access }: { access: AccessInfo }) {
   const subscribed = access.tier !== "free" && !access.admin;
   return (
     <article className={cn("glass arrive flex flex-col rounded-[2rem] p-7 sm:p-8 [--i:3]", access.tier === "pro" && "plan-featured")}>
-      <p className="font-mono text-[11px] tracking-[0.18em] text-accent-soft uppercase">Мой тариф</p>
+      <p className="kicker">Мой тариф</p>
       <h2 className="mt-3 font-display text-3xl font-bold tracking-tight">{planName(access)}</h2>
       {until && <p className="mt-2 text-sm text-muted">{untilText(until)}</p>}
       {access.tier === "pro" && access.liteUntil && access.liteUntil > (access.proUntil ?? 0) && (
@@ -164,7 +164,7 @@ function Tile({ feature, icon, title, plan, text, open, index, learn }: TileProp
         </span>
         <h2 className="font-display text-lg font-semibold whitespace-nowrap">{title}</h2>
         {!open && (
-          <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full border border-white/10 px-2 py-1 font-mono text-[10px] tracking-[0.12em] whitespace-nowrap text-dim">
+          <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-fg/75">
             <Lock size={11} aria-hidden /> {plan}
           </span>
         )}

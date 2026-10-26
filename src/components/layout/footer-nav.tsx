@@ -13,7 +13,7 @@ export function FooterNav({ title, links, guestOnly = false }: { title: string; 
   const shown = guestOnly && signedIn ? appFooterLinks : links;
   return (
     <div>
-      <h2 className="font-mono text-[11px] tracking-[0.18em] text-dim uppercase">{title}</h2>
+      <h2 className="font-display text-sm font-semibold text-fg">{title}</h2>
       <ul className="mt-4 space-y-2.5">
         {shown.map((l) => (
           <li key={l.href}>

@@ -502,7 +502,7 @@ export function LessonPlayer({
           />
 
           {video.demo && (
-            <span className="pointer-events-none absolute top-3 left-3 z-[5] rounded-full border border-white/12 bg-ink-950/60 px-2.5 py-1 font-mono text-[10px] tracking-[0.12em] text-fg/70 uppercase backdrop-blur-md">
+            <span className="pointer-events-none absolute top-3 left-3 z-[5] rounded-full border border-white/14 bg-ink-950/65 px-2.5 py-1 text-xs font-semibold text-fg/85 backdrop-blur-md">
               Демо-ролик вместо урока
             </span>
           )}
@@ -568,7 +568,7 @@ export function LessonPlayer({
               </span>
               {next && (
                 <Link href={next.href} className="group/next max-w-md">
-                  <span className="inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.18em] text-dim uppercase">
+                  <span className="label inline-flex items-center gap-1.5">
                     Следующий в разделе
                     {!next.open && (
                       <>

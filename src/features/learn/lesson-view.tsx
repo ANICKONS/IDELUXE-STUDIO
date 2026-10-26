@@ -80,7 +80,7 @@ export function LessonView({
         <div className="flex flex-wrap items-center gap-1.5">
           <Link
             href={learnSectionHref(lesson.section)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] py-1 pr-3 pl-2 font-mono text-[10.5px] tracking-[0.16em] text-fg/75 uppercase transition hover:border-white/20 hover:text-fg"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] py-1 pr-3 pl-2 text-xs font-semibold text-fg/85 transition hover:border-white/20 hover:text-fg"
           >
             <span style={{ color: `rgb(${c.tint})` }}>
               <SectionGlyph section={lesson.section} size={13} />
@@ -88,13 +88,13 @@ export function LessonView({
             {c.title}
           </Link>
           {lesson.intro && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[11.5px] text-accent-soft">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent-soft">
               <LockOpen size={12} aria-hidden /> Вводный · бесплатно с аккаунтом
             </span>
           )}
           {!lesson.intro && audience !== "full" && <AccessChip lesson={lesson} audience={audience} size="md" />}
           {lesson.isNew && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11.5px] text-fg/80">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-semibold text-fg/85">
               <span aria-hidden className="size-[5px] rotate-45 rounded-[1px] bg-accent shadow-[0_0_6px_rgb(var(--rgb-accent)/0.8)]" /> Новое
             </span>
           )}
@@ -142,7 +142,9 @@ export function LessonView({
               Главы <span className="ml-1 font-mono text-[11px] font-normal text-dim">{lesson.chapters.length}</span>
             </h2>
             {mine && lesson.open && (
-              <span className="font-mono text-[11px] text-dim tabular-nums">{mine.watched ? "просмотрено" : `${Math.round(shareOf(mine, lesson.duration) * 100)}%`}</span>
+              <span className={cn("text-xs font-semibold tabular-nums", mine.watched ? "text-accent-soft" : "text-dim")}>
+                {mine.watched ? "Просмотрено" : `${Math.round(shareOf(mine, lesson.duration) * 100)}%`}
+              </span>
             )}
           </div>
           {lesson.chapters.length ? (
@@ -193,7 +195,7 @@ export function LessonView({
       {/* About, what's needed, files */}
       <div className="lesson-area-body min-w-0 space-y-4">
         <section aria-labelledby="lesson-about" className="arrive px-1 [--i:4]">
-          <h2 id="lesson-about" className="font-mono text-[10.5px] tracking-[0.18em] text-dim uppercase">
+          <h2 id="lesson-about" className="font-display text-[15px] font-semibold text-fg">
             О разборе
           </h2>
           <div className="mt-3 max-w-3xl space-y-3 text-[15px] leading-relaxed text-fg/85">
@@ -257,7 +259,7 @@ export function LessonView({
           <h2 id="lesson-section" className="font-display text-[15px] font-semibold">
             Раздел {c.title}
           </h2>
-          <span className="font-mono text-[11px] text-dim">{lessonsCount(section.length)}</span>
+          <span className="text-xs text-dim">{lessonsCount(section.length)}</span>
         </div>
         <ol className="space-y-1">
           {section.map((l, i) => (

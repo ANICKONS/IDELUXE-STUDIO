@@ -286,10 +286,33 @@
     text-shadow: 0 0 20px rgb(var(--rgb-accent) / 0.45);
   }
 
+  /* ── Labels ──
+     Small text that names something is set in the text font, at a readable size and in a colour
+     that can be read. Tiny spaced-out mono capitals stay only with the editor's own marks: the
+     COMP labels and timecodes of section headings, the preloader's render meter, the editor window.
+     .eyebrow — a pill above a page's title («Моя студия», «Тарифы IDELUXE»);
+     .kicker  — the warm line above a card's big title, led by the keyframe diamond of the menu;
+     .label   — what a tile, a list or a group of links is, above its value or its items. */
   .eyebrow {
-    @apply inline-flex items-center gap-2 rounded-full px-3 py-1 font-mono text-[11px] tracking-[0.18em] text-accent-soft uppercase;
-    background: rgb(var(--rgb-accent) / 0.07);
-    border: 1px solid rgb(var(--rgb-accent) / 0.2);
+    @apply inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] leading-none font-semibold text-accent-soft;
+    background: rgb(var(--rgb-accent) / 0.08);
+    border: 1px solid rgb(var(--rgb-accent) / 0.24);
+  }
+  .kicker {
+    @apply inline-flex items-center gap-2 text-[13px] leading-tight font-semibold text-accent-soft;
+  }
+  .kicker::before {
+    content: "";
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 1.5px;
+    background: var(--color-accent);
+    box-shadow: 0 0 8px 1px rgb(var(--rgb-accent) / 0.55);
+    transform: rotate(45deg);
+  }
+  .label {
+    @apply text-[13px] leading-snug font-semibold text-fg/75;
   }
 
   .kbd {

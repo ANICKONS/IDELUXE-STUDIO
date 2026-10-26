@@ -35,7 +35,7 @@ export function AuthCard({
           <span aria-hidden className="absolute -inset-3 rounded-full bg-accent-strong/30 blur-xl" />
           <LogoMark size={52} className="relative" />
         </div>
-        <p className="mt-5 font-mono text-[10px] tracking-[0.2em] text-dim uppercase">IDELUXE · Личный кабинет</p>
+        <p className="kicker mt-5">Личный кабинет IDELUXE</p>
         {/* Re-mounts when titleKey changes, so the new title glides in */}
         <div key={titleKey} className="animate-fade-up">
           <h1 className="mt-3 font-display text-[1.65rem] leading-tight font-semibold">{title}</h1>

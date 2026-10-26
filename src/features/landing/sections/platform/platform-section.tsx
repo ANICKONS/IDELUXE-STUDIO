@@ -153,7 +153,7 @@ function BentoCard({
         </span>
         <h3 className="font-display text-lg leading-tight font-semibold text-fg">{title}</h3>
         {plan && (
-          <span className="ml-auto shrink-0 self-start rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[10px] tracking-[0.14em] whitespace-nowrap text-accent-soft">
+          <span className="ml-auto shrink-0 self-start rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-accent-soft">
             <span className="sr-only">Входит в подписку </span>
             {plan}
           </span>

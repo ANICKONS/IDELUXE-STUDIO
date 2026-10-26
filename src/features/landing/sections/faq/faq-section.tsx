@@ -7,7 +7,7 @@ import { faq } from "@/content/landing";
 /** Questions about the platform and buying (FaqList: one answer open at a time, works without JavaScript). */
 export function FaqSection() {
   return (
-    // No section-screen here: the final CTA card follows right after the questions
+    // No section-screen here: the reviews and the final CTA card follow right after the questions
     <section id={landingAnchors.faq} className="section relative px-4">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)]">
         <div>

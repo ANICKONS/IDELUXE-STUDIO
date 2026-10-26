@@ -13,7 +13,7 @@ export default function PageError({ error, reset }: { error: Error & { digest?: 
   return (
     <section className="flex min-h-[80dvh] items-center justify-center px-4 pt-32">
       <div className="glass arrive max-w-lg rounded-[2rem] p-10 text-center">
-        <p className="font-mono text-xs tracking-[0.2em] text-accent-soft">RENDER FAILED</p>
+        <p className="kicker">Ошибка рендера</p>
         <h1 className="mt-5 font-display text-3xl font-semibold">Кадр не отрендерился</h1>
         <p className="mt-3 text-muted">Что-то пошло не так при загрузке страницы. Попробуй ещё раз.</p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

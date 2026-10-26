@@ -99,7 +99,7 @@ export function Segmented<T extends string>({
               "relative z-10 inline-flex items-center gap-1.5 rounded-full font-semibold whitespace-nowrap transition-colors duration-300",
               block && "flex-1 justify-center",
               size === "sm" ? "h-8 px-3 text-[12.5px]" : "h-9 px-3.5 text-[13px]",
-              active ? "text-fg" : "text-fg/50 hover:text-fg/85",
+              active ? "text-fg" : "text-fg/65 hover:text-fg",
             )}
           >
             {o.icon}

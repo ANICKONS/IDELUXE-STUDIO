@@ -1,25 +1,32 @@
 import Link from "next/link";
-import { ArrowRight, Briefcase, Headphones, Play, Wrench } from "lucide-react";
+import { ArrowDown, ArrowRight, Play } from "lucide-react";
+import { HashLink } from "@/components/layout/hash-link";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { PackCard } from "@/features/pack/pack-card";
 import { AboutScreen } from "@/features/landing/sections/about/about-screen";
+import { ReviewTicker } from "@/features/landing/sections/reviews/review-ticker";
 import { NewYearSnowCap } from "@/features/new-year";
+import { ReturningOfferPanel } from "@/features/pricing";
 import { ABOUT_REEL_ORIGIN, ReelButton } from "@/features/reel";
-import { landingAnchors, routes } from "@/config/routes";
-import { approachPillars, clients } from "@/content/landing";
-
-const pillarIcons = { briefcase: Briefcase, wrench: Wrench, headphones: Headphones } as const;
-const pillars = approachPillars.map((p) => ({ ...p, icon: pillarIcons[p.icon] }));
+import { anchorHref, landingAnchors, routes } from "@/config/routes";
+import { clients } from "@/content/landing";
+import { publishedReviews } from "@/content/reviews";
 
 /**
  * «Обо мне» (IDELUXE is one person) — a menu category: on desktop it takes the whole screen under the header.
- *   ┌ intro (7 cols) ───────────────┬ floating video (5) ┐
- *   │            (free space grows on tall screens)       │
- *   ├ «Мой подход» + clients (7)    ┼ IDX PACK card (5)  ┤  ← the pack card sits under its own video
- * Phones: intro → video → pack → approach → clients.
+ *   ┌ intro (7 cols) ───────────────────┬ floating video (5) ┐
+ *   │            (free space grows on tall screens)           │
+ *   ├ old pack's offer (7)              ┼ IDX PACK card (5)  ┤  ← the pack card sits under its own video
+ *   ├ clients + reviews strips (7)      ┤                    │
+ * The offer for those who bought the pack before (content/plans.ts → returningOffer, the same as
+ * on /pricing) stands beside the pack card: its price, and next to it the half price for them.
+ * Under it, the clients and the reviews (content/reviews.ts) drift past; «Все отзывы» leads to the
+ * full ones before the final card.
+ * Phones: intro → video → pack → offer → clients and reviews.
  * IDX PACK 3D («Скоро») is shown only on /pricing.
  */
 export function AboutSection() {
+  const withReviews = publishedReviews.length > 0;
   return (
     <section id={landingAnchors.about} className="section section-screen relative px-4">
       <div className="mx-auto flex max-w-6xl flex-1 flex-col lg:pb-6">
@@ -70,43 +77,39 @@ export function AboutSection() {
             <NewYearSnowCap variant="draped" radius={32} lumps={12} seed={21} overlay className="reveal" />
           </div>
 
-          <div className="flex min-w-0 flex-col gap-6 lg:col-span-7 lg:col-start-1 lg:row-start-1">
-            <div className="glass reveal flex flex-1 flex-col rounded-[2rem] p-7 sm:p-8">
-              <h3 className="font-display text-xl font-semibold">Мой подход</h3>
-              <p className="mt-3 leading-relaxed text-muted">
-                Эффект сам по себе ничего не решает — важно, как он работает на ритм и внимание зрителя. Поэтому в каждом разборе
-                показываю не только «что нажать», но и «зачем»: откуда берётся приём и где он уместен.
-              </p>
-              <ul className="mt-auto grid gap-4 pt-7 sm:grid-cols-3">
-                {pillars.map(({ icon: Icon, title, text }) => (
-                  <li key={title} className="glass-soft rounded-2xl p-4">
-                    <p className="flex items-center gap-2.5 text-sm leading-tight font-semibold text-fg">
-                      <Icon size={20} className="shrink-0 text-accent" aria-hidden />
-                      {title}
-                    </p>
-                    <p className="mt-2.5 text-[13px] leading-relaxed text-muted">{text}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          {/* justify-end: with the offer switched off (returningOffer.enabled) the clients card still
+              lines up with the bottom of the pack card */}
+          <div className="flex min-w-0 flex-col justify-end gap-6 lg:col-span-7 lg:col-start-1 lg:row-start-1">
+            <ReturningOfferPanel className="reveal flex-1" />
 
-            {/* Clients: one quiet marquee inside a card */}
-            <div className="glass reveal overflow-hidden rounded-[2rem] py-7">
-              <p className="px-7 font-mono text-[11px] tracking-[0.18em] text-dim uppercase sm:px-8">Опыт работы с</p>
+            {/* Clients and reviews: two quiet strips drifting opposite ways inside one card */}
+            <div className="glass reveal overflow-hidden rounded-[2rem] py-6">
+              <div className="flex items-baseline justify-between gap-4 px-7 sm:px-8">
+                <h3 className="font-display text-[15px] font-semibold text-fg">{withReviews ? "Опыт работы и отзывы" : "Опыт работы с"}</h3>
+                {withReviews && (
+                  <HashLink
+                    href={anchorHref(landingAnchors.reviews)}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md text-sm font-semibold text-accent-soft transition hover:text-fg"
+                  >
+                    Все отзывы <ArrowDown size={15} aria-hidden />
+                  </HashLink>
+                )}
+              </div>
               <ul className="sr-only">
                 {clients.map((name) => (
                   <li key={name}>{name}</li>
                 ))}
               </ul>
-              <div aria-hidden className="relative mt-5 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_12%,#000_88%,transparent)]">
-                <ul className="flex w-max animate-marquee gap-3 hover:[animation-play-state:paused]">
+              <div aria-hidden className="relative mt-4 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)]">
+                <ul className="flex w-max animate-marquee hover:[animation-play-state:paused]">
                   {[...clients, ...clients].map((name, i) => (
-                    <li key={`${name}-${i}`} className="glass-soft rounded-full px-4 py-2 text-sm whitespace-nowrap text-muted">
-                      {name}
+                    <li key={`${name}-${i}`} className="pr-3">
+                      <span className="glass-soft block rounded-full px-4 py-2 text-sm whitespace-nowrap text-muted">{name}</span>
                     </li>
                   ))}
                 </ul>
               </div>
+              <ReviewTicker reviews={publishedReviews} className="mt-2.5" />
             </div>
           </div>
         </div>

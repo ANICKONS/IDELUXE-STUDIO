@@ -7,7 +7,7 @@
    planet), the interface itself stays nearly monochrome. Primary buttons are ivory, not coloured. */
 
 /* `short:` — desktop screens up to 1200 px tall (laptops, 1080p / 1200p monitors): the hero squeezes the
-   editor window to fit the first screen (hero-section.tsx, editor-mock.tsx) */
+   editor window to fit the first screen (hero-section.tsx, hero/editor/vfx-view.tsx) */
 @custom-variant short (@media (min-width: 64rem) and (max-height: 75rem));
 
 /* The same colours as space-separated RGB channels, for translucent shades in hand-written CSS and
@@ -44,9 +44,11 @@
   /* Soft warm light for key words and the «Тарифы» link (.text-glow) */
   --color-glow: #f2dfb6;
 
+  /* Text on the dark glass: fg — main, muted — secondary (≈8:1), dim — the quietest, still readable
+     at small sizes (≈5.7:1, WCAG AA for small text). Nothing that has to be read goes below dim. */
   --color-fg: #f3f0ea;
   --color-muted: #a8a49c;
-  --color-dim: #6f6c66;
+  --color-dim: #8d8981;
 
   /* Font variables are set by next/font in src/app/fonts.ts */
   --font-display: var(--font-unbounded), ui-sans-serif, system-ui, sans-serif;
@@ -58,6 +60,8 @@
   /* Keyframes live in animations.css */
   --animate-float: float 7s ease-in-out infinite;
   --animate-marquee: marquee 40s linear infinite;
+  /* The reviews' strip under the clients' one: slower, the other way */
+  --animate-marquee-back: marquee 90s linear infinite reverse;
   --animate-ping-soft: ping-soft 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
   --animate-shimmer: shimmer 2.2s linear infinite;
   --animate-fade-up: fade-up 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;

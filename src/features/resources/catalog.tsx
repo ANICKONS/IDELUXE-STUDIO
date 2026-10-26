@@ -13,7 +13,7 @@ import { ItemDialog, type NavMove } from "@/features/resources/item-dialog";
 import { useOsPref } from "@/features/resources/prefs";
 import { ResourceCard } from "@/features/resources/resource-card";
 import { Segmented } from "@/components/ui/segmented";
-import { AccessNote, formName, Sidebar } from "@/features/resources/sidebar";
+import { AccessNote, ClipsLink, formName, Sidebar } from "@/features/resources/sidebar";
 import type { Catalog, CatalogItem } from "@/features/resources/types";
 import { cn } from "@/lib/utils";
 
@@ -160,6 +160,7 @@ export function ResourcesCatalog({ catalog }: { catalog: Catalog }) {
               return { value: s, label: kindLabel[s].many, icon: <Icon size={15} className="hidden sm:block" />, count: counts[s] };
             })}
           />
+          <ClipsLink block />
           <AccessNote audience={audience} admin={catalog.admin} openCount={openCount} className="px-1" />
         </div>
 

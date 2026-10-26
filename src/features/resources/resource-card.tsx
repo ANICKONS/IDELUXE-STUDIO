@@ -65,7 +65,7 @@ export function ResourceCard({
         {badge && (
           <span
             aria-hidden
-            className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full border border-white/10 bg-ink-950/50 px-2 py-0.5 font-mono text-[9.5px] tracking-[0.1em] text-fg/65 uppercase"
+            className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full border border-white/12 bg-ink-950/55 px-2 py-0.5 text-[11px] font-semibold text-fg/85"
           >
             {badge}
           </span>

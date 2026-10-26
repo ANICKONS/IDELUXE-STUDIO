@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Menu, Star, X } from "lucide-react";
-import { LogoMark } from "@/components/icons";
+import { DiscordIcon, LogoMark } from "@/components/icons";
 import { Avatar } from "@/components/ui/avatar";
 import { HashLink } from "@/components/layout/hash-link";
 import { MobileNav } from "@/components/layout/header/mobile-nav";
 import { TelegramMenu } from "@/components/layout/header/telegram-menu";
+import { site } from "@/config/site";
 import { appNav, mainNav, type NavItem } from "@/config/navigation";
 import { NewYearGarland } from "@/features/new-year";
 import { anchorHref, landingAnchors, routes } from "@/config/routes";
@@ -209,7 +210,7 @@ export function Header() {
                       aria-current={active ? (item.section ? "location" : "page") : undefined}
                       className={cn(
                         "inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-[12px] font-semibold tracking-[0.14em] uppercase transition-colors duration-300",
-                        item.highlight ? "text-glow hover:brightness-110" : active ? "text-fg" : "text-fg/50 hover:text-fg",
+                        item.highlight ? "text-glow hover:brightness-110" : active ? "text-fg" : "text-fg/65 hover:text-fg",
                       )}
                     >
                       {item.highlight && <Star size={13} className="fill-current" aria-hidden />}
@@ -224,6 +225,17 @@ export function Header() {
           {/* Actions */}
           <div className="flex flex-1 items-center justify-end gap-2.5 lg:flex-none">
             <TelegramMenu className="hidden sm:block" />
+            {/* Discord, beside Telegram: straight to the server */}
+            <a
+              href={site.discord.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Discord IDELUXE"
+              title="Discord IDELUXE"
+              className="hidden size-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-fg/75 transition hover:bg-white/10 hover:text-fg sm:inline-flex"
+            >
+              <DiscordIcon size={19} />
+            </a>
             {user ? (
               <Link href={routes.profile} className="btn btn-glass h-10 gap-2 rounded-full pr-4 pl-1.5 text-sm" aria-label="Открыть профиль">
                 <Avatar name={user.name} src={user.avatarUrl} size={28} />

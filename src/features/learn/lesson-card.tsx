@@ -19,13 +19,13 @@ export function AccessChip({ lesson, audience, size = "sm" }: { lesson: Lesson; 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border font-mono tracking-[0.12em] uppercase backdrop-blur-md",
-        size === "sm" ? "px-2 py-0.5 text-[9.5px]" : "px-2.5 py-1 text-[10.5px]",
-        free ? "border-accent/35 bg-accent/12 text-accent-soft" : "border-white/12 bg-ink-950/55 text-fg/70",
+        "inline-flex items-center gap-1 rounded-full border font-semibold backdrop-blur-md",
+        size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs",
+        free ? "border-accent/35 bg-accent/15 text-accent-soft" : "border-white/14 bg-ink-950/60 text-fg/85",
       )}
       title={free ? "Открыт в бесплатном аккаунте" : "Открывается в IDX PRO"}
     >
-      {free ? <LockOpen size={10} aria-hidden /> : <Lock size={10} aria-hidden />}
+      {free ? <LockOpen size={11} aria-hidden /> : <Lock size={11} aria-hidden />}
       {free ? "Бесплатно" : "PRO"}
     </span>
   );
@@ -87,7 +87,7 @@ export function LessonCard({
 
         <span className="absolute top-2.5 left-2.5 z-[2] flex gap-1.5">
           {lesson.isNew && !progress?.watched && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-ink-950/55 px-2 py-0.5 font-mono text-[9.5px] tracking-[0.12em] text-fg/85 uppercase backdrop-blur-md">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/14 bg-ink-950/60 px-2 py-0.5 text-[11px] font-semibold text-fg backdrop-blur-md">
               <span aria-hidden className="size-[5px] rotate-45 rounded-[1px] bg-accent shadow-[0_0_6px_rgb(var(--rgb-accent)/0.8)]" />
               Новое
             </span>
@@ -116,12 +116,12 @@ export function LessonCard({
       </span>
 
       <span className="flex flex-1 flex-col px-2.5 pt-3.5 pb-2">
-        <span className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.16em] text-dim uppercase">
+        <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-fg/80">
           <span style={{ color: `rgb(${c.tint})` }}>
-            <SectionGlyph section={lesson.section} size={12} />
+            <SectionGlyph section={lesson.section} size={13} />
           </span>
           {c.title}
-          {lesson.chapterCount > 0 && <span className="tracking-[0.08em] normal-case"> · {chaptersCount(lesson.chapterCount)}</span>}
+          {lesson.chapterCount > 0 && <span className="font-normal text-dim">· {chaptersCount(lesson.chapterCount)}</span>}
         </span>
         <span className={cn("mt-2 line-clamp-2 text-[15.5px] leading-snug font-semibold text-balance", lesson.open || audience === "guest" ? "text-fg" : "text-fg/75")}>
           {lesson.title}
@@ -155,8 +155,10 @@ export function ContinueCard({ lesson, progress, index }: { lesson: Lesson; prog
         <ProgressLine share={share} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.16em] text-dim uppercase">
-          <SectionGlyph section={lesson.section} size={12} className="text-accent-soft" />
+        <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-fg/80">
+          <span style={{ color: `rgb(${categoryOf(lesson.section).tint})` }}>
+            <SectionGlyph section={lesson.section} size={13} />
+          </span>
           {categoryOf(lesson.section).title}
         </span>
         <span className="mt-1 line-clamp-2 text-[14.5px] leading-snug font-semibold text-fg">{lesson.title}</span>

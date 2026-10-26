@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { Star } from "lucide-react";
-import { TelegramIcon } from "@/components/icons";
+import { DiscordIcon, TelegramIcon } from "@/components/icons";
 import { HashLink } from "@/components/layout/hash-link";
 import { telegramLinks, type NavItem } from "@/config/navigation";
 import { routes } from "@/config/routes";
+import { site } from "@/config/site";
 import type { SessionUser } from "@/types/session";
 import { cn } from "@/lib/utils";
 
@@ -56,7 +57,7 @@ export function MobileNav({
           ))}
         </ul>
 
-        <p className="mt-8 mb-3 px-1 font-mono text-[11px] tracking-[0.18em] text-dim uppercase">Telegram</p>
+        <p className="label mt-8 mb-3 px-1">Telegram и Discord</p>
         <ul className="grid gap-2">
           {telegramLinks.map((l) => (
             <li key={l.handle}>
@@ -72,6 +73,18 @@ export function MobileNav({
               </a>
             </li>
           ))}
+          <li>
+            <a
+              href={site.discord.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3"
+            >
+              <DiscordIcon size={18} className="text-[#5865f2]" />
+              <span className="text-sm font-semibold text-fg">{site.discord.label}</span>
+              <span className="ml-auto text-xs text-dim">{site.discord.hint}</span>
+            </a>
+          </li>
         </ul>
       </nav>
     </div>

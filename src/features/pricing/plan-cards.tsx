@@ -51,7 +51,7 @@ export function PlanCards({ firstIndex = 0 }: { /** `--i` of the first card's en
             За год
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 font-mono text-[10px] tracking-wide transition-colors duration-300",
+                "rounded-full px-2 py-0.5 text-[11px] font-semibold transition-colors duration-300",
                 billing === "year" ? "bg-ink-950/10 text-ink-950/75" : "bg-accent/20 text-accent-soft",
               )}
             >
@@ -100,7 +100,7 @@ function PlanCard({ plan, billing, animate, index }: { plan: Plan; billing: Bill
       {plan.badge && (
         <span
           className={cn(
-            "absolute -top-3 left-6 rounded-full px-3 py-1 font-mono text-[10px] tracking-[0.16em] uppercase",
+            "absolute -top-3 left-6 rounded-full px-3 py-1 text-xs font-semibold",
             featured ? "bg-accent text-ink-950 shadow-[0_6px_20px_-6px_rgb(var(--rgb-accent)/0.7)]" : "border border-white/12 bg-ink-900 text-accent-soft",
           )}
         >

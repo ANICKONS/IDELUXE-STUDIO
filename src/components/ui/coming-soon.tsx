@@ -22,7 +22,7 @@ export function ComingSoon({
   return (
     <section className="px-4 pt-32 pb-8 sm:pt-40">
       <div className="glass arrive mx-auto max-w-2xl rounded-[2rem] p-8 text-center sm:p-12">
-        <p className="font-mono text-xs tracking-[0.2em] text-accent-soft">RENDER QUEUE · В РАБОТЕ</p>
+        <p className="kicker">В работе</p>
         <h1 className="mt-5 font-display text-3xl font-semibold text-balance sm:text-4xl">{title}</h1>
         <p className="mx-auto mt-4 max-w-lg leading-relaxed text-muted">{description}</p>
 

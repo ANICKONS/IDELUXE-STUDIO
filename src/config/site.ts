@@ -10,7 +10,11 @@ export const site = {
     bot: { handle: "@de_1uxe_bot", url: "https://t.me/de_1uxe_bot" },
     channel: { handle: "@de_1uxeee", url: "https://t.me/de_1uxeee" },
     personal: { handle: "@de_1uxe", url: "https://t.me/de_1uxe" },
+    /** «Клипы» in «Ресурсы»: the channel the clips are collected in. ВРЕМЕННО основной канал — замени на канал с клипами. */
+    clips: { handle: "@de_1uxeee", url: "https://t.me/de_1uxeee" },
   },
+  /** The Discord server: the header (beside Telegram), the mobile menu, the footer. ЗАМЕНИ url на приглашение сервера (https://discord.gg/…). */
+  discord: { label: "Discord", hint: "Сервер IDELUXE", url: "https://discord.com/" },
 } as const;
 
 export type TelegramContact = { handle: string; url: string };

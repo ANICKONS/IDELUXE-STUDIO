@@ -58,7 +58,7 @@ export function PackLockedCard({ titleAs: Title = "h3", className }: { titleAs?:
         </span>
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
           <Title className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{pack.title}</Title>
-          <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 font-mono text-[10px] tracking-[0.16em] text-accent-soft uppercase">Скоро</span>
+          <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent-soft">Скоро</span>
         </div>
         <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted">{pack.tagline}</p>
         <a href={site.telegram.channel.url} target="_blank" rel="noopener noreferrer" className="btn btn-glass btn-md mt-7">

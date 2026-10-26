@@ -308,7 +308,7 @@ export function LearnCatalog({
 
         {showResume && (
           <section aria-labelledby="learn-resume" className="mt-7">
-            <h3 id="learn-resume" className="arrive font-mono text-[10.5px] tracking-[0.18em] text-dim uppercase [--i:5]">
+            <h3 id="learn-resume" className="arrive font-display text-[15px] font-semibold text-fg [--i:5]">
               Продолжить просмотр
             </h3>
             <ul className="mt-3 grid gap-3 md:grid-cols-2">
@@ -322,7 +322,7 @@ export function LearnCatalog({
         )}
 
         <div key={gridKey} className={showResume ? "mt-8" : "mt-5"}>
-          {showResume && <h3 className="arrive mb-3 font-mono text-[10.5px] tracking-[0.18em] text-dim uppercase [--i:6]">Все разборы</h3>}
+          {showResume && <h3 className="arrive mb-3 font-display text-[15px] font-semibold text-fg [--i:6]">Все разборы</h3>}
           {list.length ? (
             <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {list.map((l, i) => (
